@@ -1,0 +1,6 @@
+psql <<-EOSQL
+create USER ${SCORE_USER} with password '${SCORE_PASSWORD}';
+create DATABASE ${SCORE_DB} with owner ${SCORE_USER};
+GRANT ALL PRIVILEGES ON DATABASE ${SCORE_DB} TO ${SCORE_USER};
+EOSQL
+PGPASSWORD=${POSTGRES_PASSWORD} psql -d ${SCORE_DB} -f data/db.sql

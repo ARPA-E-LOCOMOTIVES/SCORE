@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<script type="text/babel">
+
+  function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = jQuery.trim(cookies[i]);
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+  var data = JSON.parse("{{car_types|escapejs}}");
+  var options = []
+  for(var line in data){
+    options.push(data[line]);
+  }
+
+  var data = JSON.parse("{{freight_ids|escapejs}}");
+  var freight_ids = []
+  for(var line in data){
+    freight_ids.push(data[line]);
+  }
+
+  var existing_consist_data = JSON.parse("{{edit_mode_data|escapejs}}");
+  var edit_mode_id = existing_consist_data['pk'];
+  var edit_mode_name = existing_consist_data['name'];
+  var edit_mode_types = existing_consist_data['types'];
+  var existing_consist = []
+  for(var line in edit_mode_types){
+    existing_consist.push(edit_mode_types[line]);
+  }
+
+  class ConsistGenerator extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        consist_name: "enter_name",
+        no_duplicates: 1,
+        car_type: options[0].value,
+        load_percentage: true,
+        edit_mode_id: -1,
+        clone: false,
+        items: []
+      }
+      if (existing_consist.length > 0){
+        this.state.edit_mode_id = edit_mode_id;
+        this.state.consist_name = edit_mode_name;
+        for (var consist_data in existing_consist){
+          this.state.items.push(existing_consist[consist_data]);
+        }
+      }
+    }
+
+    updateNoDuplicates(event) {
+      this.setState({
+        no_duplicates: event.target.value
+      });
+    }
+
+    updateCarType(event) {
+      this.setState({
+        car_type: event.target.value
+      });
+      var freightindex = freight_ids.indexOf(parseInt(event.target.value));
+      if (freightindex == -1){
+        $( "#loaded_checkbox" ).hide();
+      } else {
+        $( "#loaded_checkbox" ).show();
+      }
+    }
+
+    updateLoadPercentage(event) {
+      this.setState({
+        load_percentage: event.target.checked
+      });
+    }
+
+    updateConsistName(event) {
+      this.setState({
+        consist_name: event.target.value
+      });
+    }
+
+    handleItemChanged(i, ii, event) {
+      var items = this.state.items;
+      items[i][ii]  = event.target.value;
+      this.setState({
+        items: items
+      });
+    }
+
+    handleItemChecked(i, ii, event) {
+      var items = this.state.items;
+      items[i][ii]  = event.target.checked;
+      this.setState({
+        items: items
+      });
+    }
+
+    handleClone(event) {
+      this.state.clone = event.target.checked;
+    }
+
+    handleItemDeleted(i) {
+      var items = this.state.items;
+      items.splice(i, 1);
+      this.setState({
+        items: items
+      });
+      this.toggleSubmit();
+    }
+
+    addCars() {
+      var items = this.state.items;
+      items.push([this.state.no_duplicates, this.state.car_type, this.state.load_percentage]);
+      this.setState({
+        items: items,
+        no_duplicates: 1,
+        car_type: options[0].value,
+        load_percentage: true
+      });
+
+      var freightindex = freight_ids.indexOf(parseInt(options[0].value));
+      if (freightindex == -1){
+        $( "#loaded_checkbox" ).hide();
+      } else {
+        $( "#loaded_checkbox" ).show();
+      }
+
+      this.toggleSubmit();
+
+    }
+
+    toggleSubmit(){
+      var has_locomotive = false;
+      var has_freight = false;
+      for (var item of this.state.items){
+        if (freight_ids.indexOf(parseInt(item[1])) != -1){
+          has_freight = true;
+        }
+        if (freight_ids.indexOf(parseInt(item[1])) == -1){
+          has_locomotive = true;
+        }
+      }
+
+      if (has_freight && has_locomotive){
+        $( "#submit_button" ).show();
+      } else {
+        $( "#submit_button" ).hide();
+      }
+
+      if (has_freight){
+        $( "#consist_freight_label" ).hide();
+      } else {
+        $( "#consist_freight_label" ).show();
+      }
+
+      if (has_locomotive){
+        $( "#consist_locomotive_label" ).hide();
+      } else {
+        $( "#consist_locomotive_label" ).show();
+      }
+
+
+
+
+    }
+
+    handleSubmit(event){
+
+      var csrftoken = getCookie('csrftoken');
+      const requestOptions = {
+          method: 'POST',
+          redirect: 'follow',
+          headers:{
+            'Accept':'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+          },
+          body: JSON.stringify({
+            'consist_name' : this.state.consist_name,
+            'data': this.state.items,
+            'edit_mode_id': this.state.edit_mode_id,
+            'clone': this.state.clone
+          })
+      };
+
+      fetch('../submit-consist/', requestOptions).then(response => {
+          if (response.redirected) {
+              window.location.href = response.url;
+          }
+      })
+
+      $("#loader_container").html('<div class="loadertop"></div>');
+      $("#submit_button").hide();
+
+    }
+
+    renderRows() {
+      var context = this;
+      return  this.state.items.map(function(o, i) {
+        var freightindex = freight_ids.indexOf(parseInt(o[1]));
+        var visible_checkbox = (freightindex != -1);
+        return (
+          <tr key={"item-" + i}>
+            <td>
+              <input
+                type="number"
+                class="input-small"
+                value={o[0]}
+                onChange={context.handleItemChanged.bind(context, i, 0)}
+              />
+            </td>
+            <td>
+              <select
+                value={o[1]}
+                onChange={context.handleItemChanged.bind(context, i, 1)}
+              >
+              {options.map((opt, index) => {
+                return <option value={opt.value}>{opt.label}</option>;
+              })}
+              </select>
+            </td>
+            <td>
+              { visible_checkbox &&
+                <input
+                  type="checkbox"
+                  checked={o[2]}
+                  onChange={context.handleItemChecked.bind(context, i, 2)}
+                />
+              }
+            </td>
+            <td>
+              <button class="btn btn-default btn-sm"
+                onClick={context.handleItemDeleted.bind(context, i)}
+              >Remove</button>
+            </td>
+          </tr>
+        );
+      });
+    }
+
+    render() {
+
+      return (
+        <div>
+          <h2>Create Consist</h2><br/>
+          First step is to enter a name for the consist. Then, add cars to the consist where quantity identifies how many of that car type. The loaded option only applies to freight cars, to identify if they are fully loaded or empty. Once cars are added to the consist, they can be updated or removed in the table that lists the cars locations in order from front to back. The Submit button will save the consist to use for power and emission analyses
+          <br/><br/>
+          <h4>1) Assign Name : </h4><br/>
+          <input
+            type="text"
+            class="input"
+            value={this.state.consist_name}
+            onChange={this.updateConsistName.bind(this)}
+          />
+          <hr/>
+          <h4>2) Add Car(s) to Consist</h4><br/>
+          <table className="">
+            <thead>
+              <tr>
+                <th>
+                  Quantity
+                </th>
+                <th>
+                  Car
+                </th>
+                <th>
+                  Loaded
+                </th>
+                <th>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <th>
+                <input
+                  type="number"
+                  class="input-small"
+                  value={this.state.no_duplicates}
+                  onChange={this.updateNoDuplicates.bind(this)}
+                />
+              </th>
+              <th>
+                <select
+                  value={this.state.car_type}
+                  onChange={this.updateCarType.bind(this)}
+                >
+                {options.map((opt, index) => {
+                  return <option value={opt.value}>{opt.label}</option>;
+                })}
+                </select>
+              </th>
+              <th>
+                <input id="loaded_checkbox"
+                  type="checkbox"
+                  checked={this.state.load_percentage}
+                  onChange={this.updateLoadPercentage.bind(this)}
+                />
+              </th>
+              <th>
+                <button
+                  onClick={this.addCars.bind(this)}
+                  class= "btn btn-primary" >
+                  Add
+                </button>
+              </th>
+            </tbody>
+          </table>
+
+          <hr/>
+
+
+          <div class="row">
+            <div class="span8">
+              <h4>3) Check Ordered Consist Cars (front to back) </h4>
+              <span id="consist_locomotive_label" class="badge badge-default">The consist needs at least 1 locomotive</span><br></br>
+              <span id="consist_freight_label" class="badge badge-default">The consist needs at least 1 freight car</span>
+              <div><br /></div>
+
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>
+                      Quantity
+                    </th>
+                    <th>
+                      Car
+                    </th>
+                    <th>
+                      Loaded
+                    </th>
+                    <th>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {this.renderRows()}
+                </tbody>
+              </table>
+
+              <button id="submit_button" class="btn btn-primary" onClick={this.handleSubmit.bind(this) }>
+                Submit
+              </button>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  ReactDOM.render(<ConsistGenerator />, document.querySelector("#app1"))
+
+  // set visibility of submit button
+  $( "#submit_button" ).hide();
+
+  $(window).bind("pageshow", function(event) {
+      if (event.originalEvent.persisted) {
+          $("#loader_container").html('');
+      }
+  });
+
+
+</script>
+
+
+
+<div class="row">
+  <div class="span12 offset1">
+    <div id="app1"></div>
+    <br>
+    <br>
+  </div>
+</div>
+
+
+<!--
+<div>
+  <br />
+  <h4>
+    <input
+      type="checkbox"
+      onChange={this.handleClone.bind(this)}
+    /> Clone as New Consist</h4>
+  <br />
+</div>
+-->
+
+{% endblock %}

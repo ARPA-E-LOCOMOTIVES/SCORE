@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+
+<div class="row">
+  <div class="span10 offset1">
+    <h2>{{ consist_info.name }}</h2><br>
+    <h4>Number of Cars : {{ consist_info.number_cars }}</h4>
+    <h4>Total Power (hp) : {{ consist_info.power_hp }}</h4>
+    <h4>Total Weight (tons) : {{ consist_info.weight_tons }}</h4>
+    <h4>Trailing Tons (tons) : {{ consist_info.trailing_tons }}</h4>
+    <h4>HP per Trailing Ton (hp/tt) : {{ consist_info.power_to_weight }}</h4>
+    <h4>Total Length (mi) : {{ consist_info.length_mi }}</h4>
+  </div>
+</div>
+<br>
+
+<div class="row">
+  <div class="span12 offset1">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Position</th>
+          <th scope="col">AAR Name</th>
+          <th scope="col">Name</th>
+          <th scope="col">Description</th>
+          <th scope="col">Length (ft)</th>
+          <th scope="col">Height (ft)</th>
+          <th scope="col">Number of Axles</th>
+          <th scope="col">Weight (tons)</th>
+          <th scope="col">Loaded</th>
+          <th scope="col">Metrics</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for common_data in consist_common_info %}
+        <tr>
+            <th>{{common_data.0}}</th>
+            <td>{{common_data.1}}</td>
+            <td>{{common_data.2}}</td>
+            <td>{{common_data.3}}</td>
+            <td>{{common_data.4}}</td>
+            <td>{{common_data.5}}</td>
+            <td>{{common_data.6}}</td>
+            <td>{{common_data.7}}</td>
+            <td>{{common_data.8}}</td>
+            <td>{{common_data.9}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

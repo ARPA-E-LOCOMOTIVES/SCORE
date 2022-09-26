@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+
+<div class="container">
+
+  <!-- Main hero unit for a primary marketing message or call to action -->
+  <div class="hero-unit">
+    <h2>Add Feedback</h2>
+  </div>
+
+  <form action="{% url 'submit_feedback'  %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="row">
+      <div class="span12">
+        <textarea id="feedback" name="feedback" rows="8" cols="100" style="width:800px">Enter feedback</textarea>
+      </div>
+    </div>
+
+    <br />
+    <div class="row">
+      <div class="span2">
+        <button type="submit" class="btn btn-primary" >Send</button>
+      </div>
+    </div>
+  </form>
+
+</div>
+
+
+{% endblock %}

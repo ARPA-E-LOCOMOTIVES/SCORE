@@ -1,0 +1,440 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script src="{% static 'js/vis/d3-data-model.js' %}"></script>
+<script src="{% static 'js/vis/d3-scatter-plot.js' %}"></script>
+
+<script type="text/babel">
+
+  function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = jQuery.trim(cookies[i]);
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+  var existing_locomotive_data = JSON.parse("{{edit_mode_data|escapejs}}");
+  var edit_mode_id = existing_locomotive_data['pk'];
+  var edit_mode_name = existing_locomotive_data['name'];
+  var edit_mode_description = existing_locomotive_data['description'];
+  var edit_mode_length = existing_locomotive_data['length'];
+  var edit_mode_width = existing_locomotive_data['width'];
+  var edit_mode_height = existing_locomotive_data['height'];
+  var edit_mode_number_axles = existing_locomotive_data['number_axles'];
+  var edit_mode_braking_force = existing_locomotive_data['braking_force'];
+  var edit_mode_fuel_capacity = existing_locomotive_data['fuel_capacity'];
+  var edit_mode_weight = existing_locomotive_data['weight'];
+  var edit_mode_cost = existing_locomotive_data['cost'];
+  var edit_mode_max_power = existing_locomotive_data['max_power'];
+  var edit_mode_power_to_wheels = existing_locomotive_data['power_to_wheels'];
+
+  console.log(edit_mode_power_to_wheels);
+
+  class DieselGenerator extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        locomotive_name: edit_mode_name,
+        locomotive_description: edit_mode_description,
+        locomotive_length : edit_mode_length,
+        locomotive_width : edit_mode_width,
+        locomotive_height : edit_mode_height,
+        locomotive_number_axles : edit_mode_number_axles,
+        locomotive_braking_force : edit_mode_braking_force,
+        locomotive_fuel_capacity : edit_mode_fuel_capacity,
+        locomotive_weight : edit_mode_weight,
+        locomotive_cost : edit_mode_cost,
+        locomotive_max_power : edit_mode_max_power,
+        power_level: 0,
+        fuel_consumption: 0,
+        hc_emission : 0,
+        co_emission : 0,
+        no_emission : 0,
+        pm_emission : 0,
+        edit_mode_id: edit_mode_id,
+        items: [],
+        info_msg: ""
+      }
+      for (var i = 0; i < edit_mode_power_to_wheels.length; i++){
+        this.state.items.push(edit_mode_power_to_wheels[i]);
+      }
+      if (edit_mode_id != 0){
+        this.state.info_msg = "*consists using this diesel locomotive will need to be manually editted if you want the new submitted changes to apply"
+      }
+    }
+
+    updateMetric(event) {
+      const { target: { name, value } } = event;
+      this.setState({ [name]: value });
+    }
+
+    handleItemChanged(i, ii, event) {
+      var items = this.state.items;
+      items[i][ii]  = event.target.value;
+      this.setState({
+        items: items
+      });
+    }
+
+    handleItemChecked(i, ii, event) {
+      var items = this.state.items;
+      items[i][ii]  = event.target.checked;
+      this.setState({
+        items: items
+      });
+    }
+
+    handleItemDeleted(i) {
+      var items = this.state.items;
+      items.splice(i, 1);
+      this.setState({
+        items: items
+      });
+    }
+
+    addPower() {
+      var items = this.state.items;
+      items.push([
+        parseFloat(this.state.power_level),
+        parseFloat(this.state.fuel_consumption),
+        parseFloat(this.state.hc_emission),
+        parseFloat(this.state.co_emission),
+        parseFloat(this.state.no_emission),
+        parseFloat(this.state.pm_emission)
+      ]);
+      this.setState({
+        items: items,
+        power_level: 0,
+        fuel_consumption: 0,
+        hc_emission : 0,
+        co_emission : 0,
+        no_emission : 0,
+        pm_emission : 0
+      });
+      console.log(this.state)
+    }
+
+    handleSubmit(event){
+
+      var csrftoken = getCookie('csrftoken');
+      const requestOptions = {
+          method: 'POST',
+          redirect: 'follow',
+          headers:{
+            'Accept':'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+          },
+          body: JSON.stringify({
+            'locomotive_name' : this.state.locomotive_name,
+            'locomotive_description' : this.state.locomotive_description,
+            'locomotive_length' : this.state.locomotive_length,
+            'locomotive_width' : this.state.locomotive_width,
+            'locomotive_height' : this.state.locomotive_height,
+            'locomotive_number_axles' : this.state.locomotive_number_axles,
+            'locomotive_braking_force' : this.state.locomotive_braking_force,
+            'locomotive_fuel_capacity' : this.state.locomotive_fuel_capacity,
+            'locomotive_weight' : this.state.locomotive_weight,
+            'locomotive_cost' : this.state.locomotive_cost,
+            'locomotive_max_power' : this.state.locomotive_max_power,
+            'data': this.state.items,
+            'edit_mode_id': this.state.edit_mode_id
+          })
+      };
+
+      fetch('../submit-diesel-locomotive/', requestOptions).then(response => {
+          if (response.redirected) {
+              window.location.href = response.url;
+          }
+      })
+
+    }
+
+    updatePlot(){
+
+      var dataset = {};
+      dataset['power'] = [];
+      dataset['fuel_consumed'] = [];
+      dataset['hc_emission'] = [];
+      dataset['co_emission'] = [];
+      dataset['no_emission'] = [];
+      dataset['pm_emission'] = [];
+      for (var i = 0 ; i < this.state.items.length; i++){
+        dataset['power'].push(this.state.items[i][0]);
+        dataset['fuel_consumed'].push(this.state.items[i][1]);
+        dataset['hc_emission'].push(this.state.items[i][2]);
+        dataset['co_emission'].push(this.state.items[i][3]);
+        dataset['no_emission'].push(this.state.items[i][4]);
+        dataset['pm_emission'].push(this.state.items[i][5]);
+      }
+
+      for (var i = 1; i < 6; i++){
+        var dataModel = new d3DataModel(dataset);
+        var scatter_plot = new d3ScatterPlot();
+        scatter_plot.set_data_model(dataModel);
+        scatter_plot.set_data_x(dataModel.get_titles()[0]);
+        scatter_plot.set_data_y(dataModel.get_titles()[i]);
+        scatter_plot.set_div('powercurve' + i);
+        scatter_plot.set_size(400, 160);
+        scatter_plot.set_point_size(4);
+        scatter_plot.refresh();
+      }
+
+    }
+
+    renderRows() {
+      var context = this;
+      this.updatePlot();
+      return  this.state.items.map(function(o, i) {
+        return (
+          <tr key={"item-" + i}>
+            <td>
+              <input type="number" class="input-small" value={o[0]} onChange={context.handleItemChanged.bind(context, i, 0)}/>
+            </td>
+            <td>
+              <input type="number" class="input-small" value={o[1]} onChange={context.handleItemChanged.bind(context, i, 1)}/>
+            </td>
+            <td>
+              <input type="number" class="input-small" value={o[2]} onChange={context.handleItemChanged.bind(context, i, 2)}/>
+            </td>
+            <td>
+              <input type="number" class="input-small" value={o[3]} onChange={context.handleItemChanged.bind(context, i, 3)}/>
+            </td>
+            <td>
+              <input type="number" class="input-small" value={o[4]} onChange={context.handleItemChanged.bind(context, i, 4)}/>
+            </td>
+            <td>
+              <input type="number" class="input-small" value={o[5]} onChange={context.handleItemChanged.bind(context, i, 5)}/>
+            </td>
+            <td>
+              <button class="btn btn-default btn-sm" onClick={context.handleItemDeleted.bind(context, i)}>Remove</button>
+            </td>
+          </tr>
+        );
+      });
+    }
+
+    render() {
+
+      return (
+        <div>
+          <h2>Diesel Locomotive</h2><br/>
+          <div class="row span12">
+            <div class="span2">
+              Name :
+            </div>
+            <div class="span1">
+              <input type="text" class="input-small" name="locomotive_name" value={this.state.locomotive_name} onChange={this.updateMetric.bind(this)}/>
+            </div>
+
+            <div class="span2 offset2">
+              Description :
+            </div>
+            <div class="span1">
+              <input type="text" name="locomotive_description" value={this.state.locomotive_description} onChange={this.updateMetric.bind(this)}/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Length (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_length"  value={this.state.locomotive_length} onChange={this.updateMetric.bind(this)}/>
+            </div>
+            <div class="span2 offset2">
+              Width (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_width" value={this.state.locomotive_width} onChange={this.updateMetric.bind(this)}/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Height (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_height" value={this.state.locomotive_height} onChange={this.updateMetric.bind(this)}/>
+            </div>
+            <div class="span2 offset2">
+              Number of Axles :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_number_axles" value={this.state.locomotive_number_axles} onChange={this.updateMetric.bind(this)}/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Braking Force (N) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_braking_force" value={this.state.locomotive_braking_force} onChange={this.updateMetric.bind(this)}/>
+            </div>
+            <div class="span2 offset2">
+              Fuel Capacity (kg) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_fuel_capacity" value={this.state.locomotive_fuel_capacity} onChange={this.updateMetric.bind(this)}/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Weight (tonnes) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_weight" value={this.state.locomotive_weight} onChange={this.updateMetric.bind(this)}/>
+            </div>
+            <div class="span2 offset2">
+              Acquisition Cost ($) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_cost" value={this.state.locomotive_cost} onChange={this.updateMetric.bind(this)}/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Max Power (kW) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_max_power" value={this.state.locomotive_max_power} onChange={this.updateMetric.bind(this)}/>
+            </div>
+          </div>
+
+          <div class="row span12">
+            <hr/>
+          </div>
+
+          <h4>Add Row to Power Data Table</h4><br/>
+          <table className="">
+            <thead>
+              <tr>
+                <th>
+                  Power Level (kW)
+                </th>
+                <th>
+                  Fuel Consumption (kg/hr)
+                </th>
+                <th>
+                  HC Emission (g/hr)
+                </th>
+                <th>
+                  CO Emission (g/hr)
+                </th>
+                <th>
+                  NO Emission (g/hr)
+                </th>
+                <th>
+                  PM Emission (g/hr)
+                </th>
+                <th>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <th>
+                <input type="number" class="input-small" name="power_level" value={this.state.power_level} onChange={this.updateMetric.bind(this)}/>
+              </th>
+              <th>
+                <input type="number" class="input-small" name="fuel_consumption" value={this.state.fuel_consumption} onChange={this.updateMetric.bind(this)}/>
+              </th>
+              <th>
+                <input type="number" class="input-small" name="hc_emission" value={this.state.hc_emission} onChange={this.updateMetric.bind(this)}/>
+              </th>
+              <th>
+                <input type="number" class="input-small" name="co_emission" value={this.state.co_emission} onChange={this.updateMetric.bind(this)}/>
+              </th>
+              <th>
+                <input type="number" class="input-small" name="no_emission" value={this.state.no_emission} onChange={this.updateMetric.bind(this)}/>
+              </th>
+              <th>
+                <input type="number" class="input-small" name="pm_emission" value={this.state.pm_emission} onChange={this.updateMetric.bind(this)} />
+              </th>
+              <th>
+                <button onClick={this.addPower.bind(this)} class= "btn btn-primary">Add</button>
+              </th>
+            </tbody>
+          </table>
+
+          <hr/>
+
+          <div class="row">
+            <div class="span8">
+              <h2>Power Table</h2>
+              <div><br /></div>
+
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>
+                      Power Level (kW)
+                    </th>
+                    <th>
+                      Fuel Consumption (kg/hr)
+                    </th>
+                    <th>
+                      HC Emission (g/hr)
+                    </th>
+                    <th>
+                      CO Emission (g/hr)
+                    </th>
+                    <th>
+                      NO Emission (g/hr)
+                    </th>
+                    <th>
+                      PM Emission (g/hr)
+                    </th>
+                    <th>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {this.renderRows()}
+                </tbody>
+              </table>
+
+              <button class="btn btn-primary" onClick={this.handleSubmit.bind(this)}>
+                Submit
+              </button><br /><br />
+              <h4>{this.state.info_msg}</h4>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  ReactDOM.render(<DieselGenerator />, document.querySelector("#app1"))
+
+</script>
+
+<div class="row">
+  <div class="span8 offset1">
+    <div id="app1"></div>
+    <br>
+    <br>
+  </div>
+  <div class="span2 offset1">
+    <div style="margin-top:520px" id="powercurve1"></div>
+    <div id="powercurve2"></div>
+    <div id="powercurve3"></div>
+    <div id="powercurve4"></div>
+    <div id="powercurve5"></div>
+    <div id="powercurve6"></div>
+  </div>
+</div>
+
+
+
+{% endblock %}

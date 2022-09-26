@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<div class="container-fluid">
+    <div style="margin:10px">
+      <h2><b>Analysis</b></h2>
+      Use this to select a route, consist, and policy to run, to calculate the resulting power and emissions performance.
+    </div>
+</div>
+{% csrf_token %}
+<div class="container-fluid">
+  <br />
+  <div style="margin-left:20px">
+    <h4><b>1) Select Route : </b></h4><br>
+    <select name='routes' id="route">
+      <option value="-" id="loading1">Loading</option>
+    </select>
+  </div>
+</div>
+
+<br />
+
+<div class="container-fluid">
+  <div style="margin-left:20px">
+    <h4><b>2) Select Consist : </b></h4><br>
+      <select name='consists' id="consist" onchange="locomotive_change(this.value)">
+        <option value="-" id="loading2">Loading</option>
+      </select>
+  </div>
+</div>
+
+<br />
+
+<div class="container-fluid">
+  <div style="margin-left:20px">
+    <h4><b>3) Select Policy Settings: </b></h4></br>
+    <div class="row">
+      <div class="span4">
+        <b>Powering Policy</b><br><br>
+        <input type="radio" name="policy_type" onclick="enable_policy_options(false)" value="score_lp" style="height:20px;width:20px" checked> Automatic power policy</input><br>
+        <input type="radio" name="policy_type" onclick="enable_policy_options(true)" value="user_fixed" style="height:20px;width:20px"> Manual power policy</input><br><br>
+        <div id="policy_options" style="border:1px solid grey;padding:8px">
+          Order of Locomotive Energy Usage (Top is First Priority)<br>
+          <input type="text" id="policy_order" name="policy_order" value="" style="display:none"></input>
+          <div style="margin:10px;padding:10px;border:1px solid lightgrey">
+            <ul id="sortable" name="sorted-list" class="connectedSortable" value="powerlist">
+              <li id="diesel" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Diesel</li>
+              <li id="battery" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Battery</li>
+              <li id="fuelcell" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>FuelCell</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="span4">
+        <b>Select Braking Policy</b><br><br>
+        <input id="maximum_braking" type="radio" name="braking" value="maximum_braking" style="height:16px;width:16px" checked> Maximum Braking</input><br>
+        <input id="coasting" type="radio" name="braking" value="coasting" style="height:16px;width:16px"> Coasting</input><br>
+        <input id="maximum_regen" type="radio" name="braking" value="maximum_regen" style="height:16px;width:16px"> Maximum Regenerative</input><br>
+      </div>
+      <div class="span4">
+        <b>Select Max Speed (MPH)</b><br><br>
+        <input type="text" value="60" class="dial">
+      </div>
+    </div>
+  </div>
+</div>
+
+<br />
+
+<div class="container-fluid">
+  <div class="span10">
+    <h4><input type="checkbox" id="rapid_id" name="rapid_id" checked='checked' style="height:20px;width:20px"/> Fast Analysis </h4>If this button is not selected, a Longitudinal Train Dynamics Analysis is performed which will take longer but will provide more accurate energy/power and emission estimates.<br>
+    <br />
+      <button id="submit_button" type="submit" class="btn btn-primary">Run</button>
+    </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span10 offset1">
+    <div style="margin:10px">
+      <h2><b>Results</b></h2>
+      A list of result from simulations are given below:
+      <br>
+    </div>
+    <table class='table'>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Progress</th>
+          <th>Route</th>
+          <th>Consist</th>
+          <th>Policy</th>
+          <th>Max Speed</th>
+          <th>Rapid</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="text/javascript">
+
+  //use this function to load data once the page loads
+  $(function () {
+      // load routes into option box
+      $.ajax({
+        url: '/api/get_route_list/',
+        type: 'GET'
+      })
+      .done((routes) => {
+        $.each(routes, function(id, route_name){
+          var option = new Option(route_name, id);
+          $("#route").append(option);
+        });
+        $('#loading1').remove();
+      })
+
+      // load consists into option box
+      $.ajax({
+        url: '/api/get_consist_list/',
+        type: 'GET'
+      })
+      .done((consists) => {
+        $.each(consists, function(id, consist_name){
+          var option = new Option(consist_name, id);
+          $("#consist").append(option);
+        });
+        $('#loading2').remove();
+        locomotive_change($('#consist').val())
+      })
+
+      $(".dial").knob({
+        'min': 25,
+        'max': 60,
+        'step': 1,
+        'angleArc': 270,
+        'angleOffset': -135,
+      });
+
+
+      $("#sortable").sortable({
+          stop: function( event, ui ) {
+            const ul = document.getElementById('sortable');
+            const listItems = ul.getElementsByTagName('li');
+            var v = "";
+            for (let i = 0; i <= listItems.length - 1; i++) {
+              if($(listItems[i]).is(":visible")){
+                v += listItems[i].id + ",";
+              }
+            }
+            $ ("#policy_order").val(v);
+          }
+      });
+      enable_policy_options(false)
+  });
+
+  function locomotive_change(id){
+    $ ("#diesel").hide();
+    $ ("#battery").hide();
+    $ ("#fuelcell").hide();
+
+    $.ajax({
+        url: '/api/get_consist_powers/'+id+'/',
+        type: 'GET'
+      })
+      .done((results) => {
+        powers = results.data
+        var v = "";
+        if (powers.includes("diesel")){
+          $("#diesel").show();
+          v += "diesel,";
+        }
+        if (powers.includes("battery")){
+          $("#battery").show();
+          v += "battery,";
+          $("#maximum_regen").attr('disabled', false);
+        } else {
+          $("#maximum_regen").attr('disabled', true);
+        }
+        if (powers.includes("fuelcell")){
+          $("#fuelcell").show();
+          v += "fuelcell,";
+        }
+        $("#policy_order").val(v);
+
+      })
+
+    check_model_order();
+
+  }
+
+  function check_model_order(){
+    const ul = document.getElementById('sortable');
+    const listItems = ul.getElementsByTagName('li');
+    var v = "";
+    for (let i = 0; i <= listItems.length - 1; i++) {
+      if($(listItems[i]).is(":visible")){
+        v += listItems[i].id + ",";
+      }
+    }
+  }
+
+  //$ ("#policy_options").hide();
+  function enable_policy_options(visible){
+    if (visible){
+      $ ("#policy_options").show();
+      $ ("#score_policy").hide();
+      locomotive_change($('#consist').val())
+      $("#coasting").attr('disabled', false);
+      $("#rapid_id").removeAttr('disabled');
+    } else {
+      $ ("#policy_options").hide();
+      $ ("#score_policy").show();
+      // disable all but max braking option
+      $("#maximum_regen").attr('disabled', true);
+      $("#coasting").attr('disabled', true);
+      $("#maximum_braking").prop('checked', true);
+      $("#rapid_id").prop('checked', true);
+      $("#rapid_id").attr('disabled', true);
+    }
+  }
+
+
+  $('#submit_button').click(function() {
+    // console.log($("input[name='policy_type']:checked").val());
+    // console.log($('#sortable').sortable('toArray', { attribute: 'id' }));
+    // console.log($("input[name='braking']:checked").val());
+    $.ajax({
+      url: '/api/evaluate/',
+      type: 'POST',
+      data: {
+        routes: $('#route').val(),
+        consists: $('#consist').val(),
+        policy_type: $("input[name='policy_type']:checked").val(),
+        power_order: $('#sortable').sortable('toArray', { attribute: 'id' }),
+        braking : $("input[name='braking']:checked").val(),
+        rapid: $('#rapid_id').is(":checked"),
+        max_speed: $('.dial').val(),
+        csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+      }
+    })
+    .done((response) => {
+      console.log(response)
+      updateState(response.result_id)
+    })
+    .fail((error) => console.log(error))
+  });
+
+  function updateState(resultID) {
+    $.ajax({
+      url: `/api/ltd-status/${resultID}/`,
+      type: 'GET'
+    })
+    .done(response => {
+      r_state = 'pending'
+      d_button = '<button type="button" class="btn btn-secondary btn-small" disabled>View</button>'
+      e_button = '<button type="button" class="btn btn-secondary btn-small" disabled>Export</button>'
+      rapid = 'yes'
+      if (response.state==0) {
+        r_state = 'success'
+        d_button = `<a href="/ltd_details/${response.result_id}" target="_blank" role="button" class="btn btn-primary btn-small">View</a>`
+        e_button = `<a href="/export_ltd_details/${response.result_id}" target="_blank" role="button" class="btn btn-primary btn-small">Export</a>`
+      } else if (response.state==1) {
+        r_state = 'running'
+        d_button = '<button type="button" class="btn btn-secondary btn-small" disabled>View</button>'
+        e_button = '<button type="button" class="btn btn-secondary btn-small" disabled>Export</button>'
+      }
+      if (response.rapid) {
+        rapid = 'yes'
+      } else {
+        rapid = 'no'
+      }
+      const data = `
+                <th>${response.result_id}</th>
+                <td>${r_state}</td>
+                <td>${response.progression}</td>
+                <td>${response.route}</td>
+                <td>${response.consist}</td>
+                <td>${response.policy}</td>
+                <td>${response.max_speed}</td>
+                <td>${rapid}</td>
+                <td>${d_button}</td>
+                <td>${e_button}</td>
+                `
+      const tr = $('#' + response.result_id)
+      // if the element exists, update it
+      if (tr.length) {
+        tr.html(data)
+      }
+      // otherwise, create a new row in the table
+      else {
+        const tableBody = `<tr id='${response.result_id}'>${data}</tr>`
+        $('tbody').append(tableBody)
+      }
+
+      // task is finished
+      if (response.state == 0) {return false}
+      // rerun every 2 seconds
+      setTimeout(function() {
+        updateState(response.result_id)
+      }, 2000)
+    })
+    .fail(error => console.log(error))
+  }
+</script>
+
+
+{% endblock %}

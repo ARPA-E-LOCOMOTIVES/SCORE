@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  div.tooltip {
+     position: absolute;
+     text-align: center;
+     padding: .2rem;
+     background: #313639;
+     color: #f9f9f9;
+     border: 0px;
+     border-radius: 8px;
+     pointer-events: none;
+     font-size: .7rem;
+  }
+  .axis { font: 14px sans-serif; }
+
+  svg {
+    font: 10px sans-serif;
+    padding: 10px;
+  }
+
+  .axis,
+  .frame {
+    shape-rendering: crispEdges;
+  }
+
+  .axis line {
+    stroke: #ddd;
+  }
+
+  .cell text {
+    font-weight: bold;
+    text-transform: capitalize;
+    fill: black;
+  }
+
+  .frame {
+    fill: none;
+    stroke: #aaa;
+  }
+
+
+  circle.hidden {
+    fill: #ccc !important;
+  }
+
+  .extent {
+    fill: #000;
+    fill-opacity: .125;
+    stroke: #fff;
+  }
+
+  .axis-grid line {
+    stroke: #def;
+  }
+
+</style>
+<body>
+
+<div class="row">
+  <div class="span10 offset1">
+    <div style="margin:10px">
+      <h2><b>Trade Study Results</b></h2>
+      Each point in the scatter plot represents a power and emission analysis run for one route, consist, and policy combination. Left mouse click on a point to view the
+      details of the analysis run. Change the metrics shown in the scatter plot using the controls on the left. Apply filters to data under the Show/Hide Filters button
+      below the scatter plot.
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span12 offset1">
+    <ul class="nav nav-pills" style="text-align: left;">
+        <!--
+        <li class="active"><a href="#first" data-toggle="tab" id="first_tab">Scatter Plot</a></li>
+
+        <li><a href="#second" data-toggle="tab" id="second_tab">ScatterMatrix</a></li>
+        <li><a href="#third" data-toggle="tab" id="third_tab">ParCoord</a></li>
+        -->
+    </ul>
+    <div class="tab-content">
+        <div id="first" class="tab-pane fade in active">
+          <div class="row">
+            <div class="span3">
+              <br>
+              <input type="radio" name="view_type" onclick="enable_3D_view(false)" value="score_lp" style="height:20px;width:20px" checked> 2-D view</input>
+              <input type="radio" name="view_type" onclick="enable_3D_view(true)" value="user_fixed" style="height:20px;width:20px"> 3-D view</input><br><br>
+
+              <select id="scatter_plot_xaxis">
+              </select>
+              X Axis<br>
+              <select id="scatter_plot_yaxis">
+              </select>
+              Y Axis<br>
+              <div id="zaxis_select">
+                <select id="scatter_plot_zaxis">
+                </select>
+                Z Axis
+              </div>
+              <select id="scatter_plot_color">
+              </select>
+              Color<br>
+              <select id="scatter_plot_scale">
+              </select>
+              Size<br>
+              <br>
+            </div>
+          </div>
+          <div class="row">
+            <div id="mainplot1" class="span12"></div>
+          </div>
+        </div>
+
+
+        <div id="fourth" class="tab-pane fade in">
+          <div class="row">
+            <div class="span2">
+              Details
+            </div>
+          </div>
+        </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="{% static 'js/plotly-2.12.1.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/jquery-ui.min.css' %}">
+<script src="{% static 'js/jquery-ui.min.js' %}"></script>
+
+<script>
+
+
+  // get the list of results
+  const result_ids = JSON.parse("{{result_ids|escapejs}}");
+
+  var dataModel = {};
+  var view3D = false;
+
+  // get scatter plot control references
+  var xaxis = document.getElementById('scatter_plot_xaxis');
+  var yaxis = document.getElementById('scatter_plot_yaxis');
+  var zaxis = document.getElementById('scatter_plot_zaxis');
+  var color = document.getElementById('scatter_plot_color');
+  var scale = document.getElementById('scatter_plot_scale');
+
+  // add event listeners to each control
+  xaxis.addEventListener('change', updatePlot);
+  yaxis.addEventListener('change', updatePlot);
+  zaxis.addEventListener('change', updatePlot);
+  color.addEventListener('change', updatePlot);
+  scale.addEventListener('change', updatePlot);
+
+  // trigger the data to load once the page is ready
+  $( function() {
+    $('#zaxis_select').hide();
+    for (var res_id of result_ids){
+      loadDesign(res_id)
+    }
+  });
+
+  function enable_3D_view(checked) {
+    view3D = checked;
+    if (checked) {
+      $('#zaxis_select').show();
+    } else {
+      $('#zaxis_select').hide();
+    }
+    updatePlot(true);
+  }
+
+  function addDesign(data) {
+    // need to add this the data model on the page when ready
+    // check to see if dataModel is empty
+    if (Object.keys(dataModel).length == 0) {
+      // nothing in it yet so add keys and initial data array
+      $.each(data, function(key, value) {
+        // don't want status in list, but do want a constant
+        if (key=='status') {
+          key='constant';
+          value = 1;
+        }
+        dataModel[key] = [value];
+        var optionX = new Option(key, key);
+        xaxis.append(optionX);
+        var optionY = new Option(key, key);
+        yaxis.append(optionY);
+        var optionZ = new Option(key, key);
+        zaxis.append(optionZ);
+        var optionC = new Option(key, key);
+        color.append(optionC);
+        var optionS = new Option(key, key);
+        scale.append(optionS);
+      })
+      // force the initial selection fo values for the combo boxes
+      xaxis.value="duration_hrs";
+      yaxis.value="diesel_consumed_kg";
+      zaxis.value="energy_cost";
+    } else {
+      $.each(data, function(key, value){
+        if (key=='status') {
+          key='constant';
+          value = 1;
+        }
+        dataModel[key].push(value);
+      })
+    }
+
+    updatePlot();
+
+  }
+
+  // this will update the data elements to the plot (maybe more later)
+  // may need to add some checking on inserting values for categorical data
+  // for the color map and size dimensions
+  function updatePlot(newPlot=false) {
+    if ($('#scatter_plot_scale').val() == 'constant') {
+      var size = Array(dataModel['constant'].length).fill(10);
+    } else {
+      console.log($('#scatter_plot_scale').val());
+      console.log(dataModel[$('#scatter_plot_scale').val()])
+      var min = Math.min(...dataModel[$('#scatter_plot_scale').val()]);
+      var max = Math.max(...dataModel[$('#scatter_plot_scale').val()]);
+      var size = [];
+      $.each(dataModel[$('#scatter_plot_scale').val()], function(ind, value){
+        if (max==min) {
+          size.push(10);
+        } else {
+            size.push((value-min)/(max-min)*30 + 10);
+        }
+      })
+    }
+
+    var data_update = {
+      x: [dataModel[$('#scatter_plot_xaxis').val()]],
+      y: [dataModel[$('#scatter_plot_yaxis').val()]],
+      mode: 'markers',
+      type: 'scatter',
+      marker: {
+        size: size,
+        color: dataModel[$('#scatter_plot_color').val()],
+        colorscale: 'Jet',
+        colorbar: {
+          title: {
+            text: $('#scatter_plot_color').val(),
+            side: "right"
+          }
+        }
+      }
+    }
+
+    if (view3D) {
+      data_update['z'] = [dataModel[$('#scatter_plot_zaxis').val()]]
+      data_update['type'] = 'scatter3d';
+    }
+
+    var layout_update = {
+      autosize: false,
+
+      title: {
+        text: 'Locomotives Trade Space'
+      },
+      xaxis: {
+        title: {
+          text: $('#scatter_plot_xaxis').val()
+        }
+      },
+      yaxis: {
+        title: {
+          text: $('#scatter_plot_yaxis').val()
+        }
+      },
+      height: 600
+    }
+
+    if (view3D) {
+      layout_update['zaxis'] = {title: {text: $('#scatter_plot_zaxis').val() }};
+      layout_update['height'] = 800;
+    }
+
+    Plotly.update(plotDiv, data_update, layout_update, 0);
+  }
+
+  // get the data
+  function loadDesign(id) {
+    $.ajax({
+      url: `/api/get_ltd_summary/${ id }/`,
+      type: 'GET'
+    })
+    .done((data) => {
+      var status = data.status
+      if (status==0) {
+        // add the design to the model
+        addDesign(data);
+        return false;
+      } else {
+        // not ready yet - call again in a bit (every 2 seconds)
+        setTimeout(function() {
+          loadDesign(id);
+        }, 2000)
+      }
+    });
+  }
+
+
+
+  var plotDiv = document.getElementById('mainplot1');
+  // var plotDiv = $("#mainplot1")[0];
+  Plotly.newPlot( plotDiv, [{
+    x: [1, 2, 3, 4, 5],
+    y: [1, 2, 4, 8, 16],
+    mode:'markers',
+    marker: {
+      size: [10,20,15,40,25]
+    }
+  }], {
+    title: "Locomotives Trace Space"
+  });
+
+</script>
+
+</body>
+
+{% endblock %}

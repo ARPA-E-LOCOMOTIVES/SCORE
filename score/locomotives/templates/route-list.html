@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<div class="row">
+  <div class="span12">
+    <div style="margin:10px">
+      <h2><b>Routes</b></h2>
+      A list of prepoulated example routes downloaded from the publically available <a href="https://data-usdot.opendata.arcgis.com/search?tags=Rail">NARN Database</a> to use as examples for power and emission analyses. Select a route in the left list to view its elevation, gradient, curvature, and maximum speed details.</br>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span4">
+    <div id="routelist">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col"> </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for id, route_name in route_info.items %}
+          <tr>
+            <th>
+              <h4><a href="\route-info\{{id}}" onclick="selectRoute();">{{ route_name }} </a><br><br> </h4>
+            </th>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="span6">
+    <div id="map" style="height:800px;width:1200px"></div>
+  </div>
+</div>
+
+
+<script>
+
+    var data = JSON.parse("{{locations|escapejs}}");
+    var points_data = []
+    for(var line in data){
+      points_data.push({"type": "LineString", "coordinates": [[data[line][0], data[line][1]], [data[line][0], data[line][1]]]});
+    }
+
+    var cache = JSON.parse("{{cached_route_lines|escapejs}}");
+    var cached_data = []
+    for(var line in cache){
+      for(var row in cache[line]){
+        cached_data.push(cache[line][row]);
+      }
+    }
+
+    // set size of map and list
+    var width = window.screen.width;
+    var height = window.screen.height;
+
+    var map_width = 3*width/5;
+    var control_height = 3*height/5;
+
+
+
+    document.getElementById('map').setAttribute("style","width:" + map_width + "px;height:" + control_height + "px;margin:10px");
+    document.getElementById('routelist').setAttribute("style","overflow-y:auto;height:" + control_height + "px;margin:10px");
+    document.getElementById('map').style.width=map_width + 'px';
+    document.getElementById('map').style.height=control_height + 'px';
+    document.getElementById('routelist').style.height=control_height + 'px';
+
+    var open_railway_map_layer = new L.TileLayer('http://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
+    {
+      attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a> and OpenStreetMap',
+      minZoom: 2,
+      maxZoom: 19,
+      tileSize: 256,
+      opacity: 0.4,
+    });
+
+    // var google_map_layer = new L.tileLayer.grayscale('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+    //     maxZoom: 19,
+    //     subdomains:['mt0','mt1','mt2','mt3']
+    // });
+
+    var google_map_layer = new L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+        maxZoom: 19,
+        subdomains:['mt0','mt1','mt2','mt3']
+    });
+
+    //var open_street_map_layer = new L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    //	maxZoom: 19,
+    //	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    //})
+
+    var map = new L.Map("map", {
+      center: new L.LatLng(40.0, -88.86),
+      zoom: 5,
+      layers: [google_map_layer, open_railway_map_layer]
+    });
+    L.geoJSON(points_data).addTo(map);
+    L.geoJSON(cached_data).addTo(map);
+
+    function selectRoute() {
+      $("#loader_container").html('<div class="loadertop"></div>');
+    }
+
+    $(window).bind("pageshow", function(event) {
+        if (event.originalEvent.persisted) {
+            $("#loader_container").html('');
+        }
+    });
+
+
+  </script>
+
+{% endblock %}

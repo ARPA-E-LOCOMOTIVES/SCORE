@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<div class="container-fluid">
+  <div style="margin:10px">
+    <h2><b>Trade Study Setup</b></h2>
+    Use this to select a set of routes, consists, and policies to run a trade study, to compare their resulting power and emissions performance.
+  </div>
+</div>
+{% csrf_token %}
+
+<div class="container-fluid">
+  <br />
+  <div style="margin-left:20px">
+    <h3><b>1) Select Routes : </b></h3>
+    <div class="row">
+      <div class="span6">
+        <h4>Available</h4>
+        <ul id="sortable1" class="connectedSortable">
+          <li id='loading1' class="ui-state-default">Loading...</li>
+        </ul>
+      </div>
+      <div class="span6">
+        <h4>Selected</h4>
+        <ul id="sortable2" class="connectedSortable">
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+  <br />
+  <div style="margin-left:20px">
+    <h3><b>2) Select Consists : </b></h3>
+    <div class="row">
+      <div class="span6">
+        <h4>Available</h4>
+        <ul id="sortable3" class="connectedSortable2">
+          <li id='loading2' class="ui-state-default">Loading...</li>
+        </ul>
+      </div>
+      <div class="span6">
+        <h4>Selected</h4>
+        <ul id="sortable4" class="connectedSortable2">
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+  <br />
+  <div style="margin-left:20px">
+    <h3><b>3) Select Policy Settings: </b></h3></br>
+    <p>Selected policies that are inconsistent or infeasible with the selected consists will not be include.</p>
+    <div class="row">
+      <div class="span5">
+        <b>Powering Policy</b><br><br>
+        <input type="checkbox" name="power_policy" value="score_lp" style="height:20px;width:20px" checked> Automatic power policy</input><br>
+        <input type="checkbox" name="power_policy" value="user_fixed" style="height:20px;width:20px"> Manual power policies</input><br><br>
+        <div id="policy_options">
+          <h5>Order of Locomotive Energy Usage (Top is First Priority)</h5>
+          <ul id="sortable5" name="sorted-list" class="connectedSortable" value="powerlist">
+            <li id="diesel" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Diesel</li>
+            <li id="fuelcell" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>FuelCell</li>
+            <li id="battery" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Battery</li>
+          </ul>
+        </div>
+      </div>
+      <div class="span4">
+        <b>Select Braking Policies</b><br><br>
+        <input id="maximum_braking" type="checkbox" name="braking_policy" value="maximum_braking" style="height:16px;width:16px" checked> Maximum Braking</input><br>
+        <input id="maximum_regen" type="checkbox" name="braking_policy" value="maximum_regen" style="height:16px;width:16px"> Maximum Regenerative</input><br>
+        <input id="coasting" type="checkbox" name="braking_policy" value="coasting" style="height:16px;width:16px"> Coasting</input><br>
+      </div>
+      <div class="span3">
+        <b>Select Max Speeds (MPH)</b><br><br>
+        <input id="speed60" type="checkbox" name="max_speed" value="60" checked>60 MPH</input><br>
+        <input id="speed55" type="checkbox" name="max_speed" value="55">55 MPH</input><br>
+        <input id="speed50" type="checkbox" name="max_speed" value="50">50 MPH</input><br>
+        <input id="speed45" type="checkbox" name="max_speed" value="45">45 MPH</input><br>
+        <input id="speed40" type="checkbox" name="max_speed" value="40">40 MPH</input><br>
+        <input id="speed35" type="checkbox" name="max_speed" value="35">35 MPH</input><br>
+        <input id="speed30" type="checkbox" name="max_speed" value="30">30 MPH</input><br>
+      </div>
+    </div>
+  </div>
+</div>
+<br />
+
+<div class="container-fluid">
+  <div class="span12">
+    <h3> 4) Submit Design Options </h3><br>
+    <button id="submit_button" type="submit" class="btn btn-primary">Submit</button><br />
+  </div>
+</div>
+<br />
+
+<div class="row">
+  <div class="span12">
+    <div style="margin:10px">
+      <h2><b>Trade Study Results</b></h2>
+      Results from simulations are given below: <button id="tsButton" class="btn btn-primary" disabled>View TradeSpace</button> <button id="exButton" class="btn btn-primary" disabled>Export</button><br />
+      <br>
+    </div>
+    <table class='table' id="tsResults">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Progress</th>
+          <th>Route</th>
+          <th>Consist</th>
+          <th>Policy</th>
+          <th>Max Speed</th>
+          <th>Rapid</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="text/javascript">
+
+  var arrayResults = [];
+  var session_id = "{{ session_id }}";
+
+$('#submit_button').click(function() {
+  var data = {};
+  // first test that at least one thign is selected in each of the categories
+    var powers = $('input[name="power_policy"]:checked');
+    if (powers.length > 0) {
+      var consists = $('#sortable4').sortable('toArray', { attribute: 'value'});
+      if (consists.length > 0) {
+        var routes = $('#sortable2').sortable('toArray', {attribute: 'value'});
+        if (routes.length > 0) {
+          var braking = $('input[name="braking_policy"]:checked');
+          if (braking.length > 0) {
+            var speeds = $('input[name="max_speed"]:checked');
+            if (speeds.length > 0) {
+              // next we loop through those that have multiple selections
+              speeds.each(function() {
+                data["max_speed"] = $(this).val()
+                for (const route of routes)  {
+                  data["route"] = route
+                  for (const consist of consists) {
+                    data["consist"] = consist
+                    powers.each(function() {
+                      data["power"] = $(this).val()
+                      if (data.power=='score_lp') {
+                        data["braking_policy"] = 'maximum_braking'
+                        evalLTD(data);
+                      } else {
+                        braking.each(function() {
+                          data["braking_policy"] = $(this).val()
+                          evalLTD(data);
+                        })
+                      }
+                    })
+                  }
+                }
+              })
+              // after looping through all of the designs we want to enable the TS button
+              // may want to do this somehere else - but works for now
+              $('#tsButton').html(`<a href="/tradespace/${session_id}" target="_blank" role="button" class="btn btn-primary btn-small">View TradeSpace</a>`);
+              $('#exButton').html(`<a href="/exporttradespace/${session_id}" target="_blank" role="button" class="btn btn-primary btn-small">Export</a>`);
+            } else {
+              alert('At least on max speed is needed');
+            }
+          } else {
+            alert("At least one braking policy is needed");
+          }
+        } else {
+          alert('At least on route is needed');
+        }
+      } else {
+        alert("At least one consist is needed");
+      }
+    } else {
+      alert("At least one power policy is needed");
+    }
+  });
+
+  function evalLTD(data) {
+    $.ajax({
+      url: '/api/evaluate/',
+      type: 'POST',
+      data: {
+        routes: data.route,
+        consists: data.consist,
+        policy_type: data.power,
+        power_order: $('#sortable5').sortable('toArray', { attribute: 'id' }),
+        braking : data.braking_policy,
+        rapid: true,
+        max_speed: data.max_speed,
+        session_id: session_id,
+        csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+      }
+    }).done((response) => {
+      updateState(response.result_id);
+      arrayResults.push(response.result_id);
+    }).fail((error) => console.log(error))
+
+  }
+
+  function updateState(resultID) {
+    $.ajax({
+      url: `/api/ltd-status/${resultID}/`,
+      type: 'GET'
+    })
+    .done(response => {
+      r_state = 'pending'
+      d_button = '<button type="button" class="btn btn-secondary btn-small" disabled>View</button>'
+      rapid = 'yes'
+      if (response.state==0) {
+        r_state = 'success'
+        d_button = `<a href="/ltd_details/${response.result_id}" target="_blank" role="button" class="btn btn-primary btn-small">View</a>`
+      } else if (response.state==1) {
+        r_state = 'running'
+        d_button = '<button type="button" class="btn btn-secondary btn-small" disabled>View</button>'
+      }
+      if (response.rapid) {
+        rapid = 'yes'
+      } else {
+        rapid = 'no'
+      }
+      const data = `
+                <td><b>${response.result_id}</b></td>
+                <td>${r_state}</td>
+                <td>${response.progression}</td>
+                <td>${response.route}</td>
+                <td>${response.consist}</td>
+                <td>${response.policy}</td>
+                <td>${response.max_speed}</td>
+                <td>${rapid}</td>
+                <td>${d_button}</td>
+                `
+      const tr = $('#' + response.result_id)
+      // if the element exists, update it
+      if (tr.length) {
+        tr.html(data)
+      }
+      // otherwise, create a new row in the table
+      else {
+        const tableBody = `<tr id='${response.result_id}'>${data}</tr>`
+        $('tbody').append(tableBody)
+      }
+
+      // task is finished
+      if (response.state == 0) {return false}
+      // rerun every 2 seconds
+      setTimeout(function() {
+        updateState(response.result_id)
+      }, 2000)
+    })
+    .fail(error => console.log(error))
+  }
+
+  $( function() {
+    $( "#sortable1, #sortable2" ).sortable({
+      connectWith: ".connectedSortable"
+    }).disableSelection();
+
+    $( "#sortable3, #sortable4" ).sortable({
+      connectWith: ".connectedSortable2"
+    }).disableSelection();
+
+    $("#sortable5").sortable();
+
+  });
+
+  $(function () {
+      // load routes into option box
+      $.ajax({
+        url: '/api/get_route_list/',
+        type: 'GET'
+      })
+      .done((routes) => {
+        $.each(routes, function(id, route_name){
+          $("#sortable1").append('<li class="ui-state-default" value=' + id +'>' + route_name + '</li>');
+        });
+        $('#loading1').remove();
+      })
+
+      // load consists into option box
+      $.ajax({
+        url: '/api/get_consist_list/',
+        type: 'GET'
+      })
+      .done((consists) => {
+        $.each(consists, function(id, consist_name){
+          $("#sortable3").append('<li class="ui-state-default" value=' + id +'>' + consist_name + '</li>');
+        });
+        $('#loading2').remove();
+      })
+    });
+
+
+
+
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<style>
+  .hero-unit {
+     background: url("{% static 'images/homepage1.jpg' %}");
+  }
+  .hero-unit img {
+   width: 100%; height: auto;
+  }
+</style>
+
+<div class="row">
+  <div class="span10 offset1">
+    <h2>DataLogs</h2>
+  </div>
+</div>
+<br/>
+
+<div class="row">
+  <div class="span10 offset1">
+    <table id="datalog-table" class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col">User</th>
+          <th scope="col">Time</th>
+          <th scope="col">Site</th>
+          <th scope="col">Description</th>
+          <th scope="col">Route</th>
+          <th scope="col">Consist</th>
+          <th scope="col">MetaData</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dl in datalogs_page.object_list %}
+        <tr>
+          <th>
+            {{dl.user}}
+          </th>
+          <th>{{dl.log_time}}</th>
+          <td>{{dl.site}}</td>
+          <td>{{dl.description}}</td>
+          <td>
+           {{dl.route.id}} {{dl.route.name}}
+          </td>
+          <td>
+           {{dl.consist.id}} {{dl.consist.name}}
+          </td>
+          <td>{{dl.meta_data}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+
+  <div class="span1 offset8">
+    <h4>Page : {{datalogs_page.number}} </h4>
+  </div>
+
+  <div class="span1">
+    {% if datalogs_page.has_previous %}
+      <a class="btn btn-primary" href="/datalogs?page={{datalogs_page.previous_page_number}}">Previous</a>
+    {% endif %}
+  </div>
+
+  <div class="span1">
+    {% if datalogs_page.has_next %}
+      <a class="btn btn-primary" href="/datalogs?page={{datalogs_page.next_page_number}}">Next</a>
+    {% endif %}
+  </div>
+</div>
+
+
+
+{% endblock %}

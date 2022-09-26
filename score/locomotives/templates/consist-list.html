@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+
+<div class="row">
+  <div class="span10 offset1">
+      <h2>Consists<a class="btn btn-primary" style="margin-left:40px" href="\create-consist">Create Consist</a></h2><br>
+      Available list of consists. You can create new consists using the Create button, view consist details by selecting the name, or you can edit existing ones.</br></br>
+  </div>
+</div>
+
+
+<div class="row">
+  <div class="span10 offset1">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Number of Cars</th>
+          <th scope="col">Total Power (hp)</th>
+          <th scope="col">Total Weight (tons)</th>
+          <th scope="col">Trailing Tons (tons)</th>
+          <th scope="col">HP per Trailing Ton (hp/tt)</th>
+          <th scope="col">Total Length (mi)</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for consist_info in consist_info_list %}
+        <tr>
+            <th> <a href="\consist-info\{{ consist_info.1 }}">{{ consist_info.0.name }}</a> </th>
+            <td> {{ consist_info.0.number_cars }}</td>
+            <td>{{consist_info.0.power_hp}}</td>
+            <td>{{consist_info.0.weight_tons}}</td>
+            <td>{{consist_info.0.trailing_tons}}</td>
+            <td>{{consist_info.0.power_to_weight}}</td>
+            <td>{{consist_info.0.length_mi}}</td>
+            <td><a href="\edit-consist\{{ consist_info.1 }}">Edit</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<br>
+<div class="row">
+  <div class="span10 offset1">
+    <h2><b>Locomotives</b>
+      <a class="btn btn-default" style="margin-left:40px" href="\edit-diesel-locomotive\0">Create Diesel Locomotive</a>
+      <a class="btn btn-default" style="margin-left:40px" disabled>Create Battery/Electric Locomotive</a>
+      <a class="btn btn-default" style="margin-left:40px" disabled>Create Fuel Cell Locomotive</a> </h2>  <br>
+      Available list of locomotives. You can view locomotive details by selecting the name.</br></br>
+  </div>
+</div>
+
+
+{% if diesel_locomotive_info_list|length > 0 %}
+
+<div class="row">
+  <div class="span10 offset1">
+    <h4>Diesel Locomotives</h4>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span10 offset1">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Description</th>
+          <th scope="col">Max Traction Power (hp)</th>
+          <th scope="col">Length (ft)</th>
+          <th scope="col">Width (ft)</th>
+          <th scope="col">Height (ft)</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for diesel_info in diesel_locomotive_info_list %}
+        <tr>
+            <!--<th> <a href="\consist-info\{{ diesel_info.1 }}">{{ diesel_info.0.name }}</a> </th>-->
+            <th> <a href="\edit-diesel-locomotive\{{ diesel_info.1 }}">{{ diesel_info.0.name }}</a></th>
+            <td>{{diesel_info.0.description}}</td>
+            <td>{{diesel_info.0.max_power}}</td>
+            <td>{{diesel_info.0.length}}</td>
+            <td>{{diesel_info.0.width}}</td>
+            <td>{{diesel_info.0.height}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endif %}
+{% if electric_locomotive_info_list|length > 0 %}
+
+<div class="row">
+  <div class="span10 offset1">
+    <h4>Battery/Electric Locomotives</h4>
+  </div>
+</div>
+
+<!-- <a class="btn btn-primary" style="margin-left:40px" href="\create-consist">Create Battery/Electric</a> --> </h2>  <br>
+<div class="row">
+  <div class="span10 offset1">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Description</th>
+          <th scope="col">Max Traction Power (hp)</th>
+          <th scope="col">Length (ft)</th>
+          <th scope="col">Width (ft)</th>
+          <th scope="col">Height (ft)</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for electric_info in electric_locomotive_info_list %}
+        <tr>
+            <th><a href="\show-electric-locomotive\{{ electric_info.1 }}">{{ electric_info.0.name }}</a></th>
+            <td>{{electric_info.0.description}}</td>
+            <td>{{electric_info.0.max_power}}</td>
+            <td>{{electric_info.0.length}}</td>
+            <td>{{electric_info.0.width}}</td>
+            <td>{{electric_info.0.height}}</td>
+            <td></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endif %}
+{% if fuel_cell_locomotive_info_list|length > 0 %}
+
+<div class="row">
+  <div class="span10 offset1">
+    <h4>Fuel Cell Locomotives</h4>
+  </div>
+</div>
+
+<!-- <a class="btn btn-primary" style="margin-left:40px" href="\create-consist">Create Battery/Electric</a> --> </h2>  <br>
+<div class="row">
+  <div class="span10 offset1">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Description</th>
+          <th scope="col">Max Power Out (hp)</th>
+          <th scope="col">Length (ft)</th>
+          <th scope="col">Width (ft)</th>
+          <th scope="col">Height (ft)</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fuel_cell_info in fuel_cell_locomotive_info_list %}
+        <tr>
+            <th><a href="\show-fuelcell-locomotive\{{ fuel_cell_info.1 }}">{{fuel_cell_info.0.name}}</a></th>
+            <td>{{fuel_cell_info.0.description}}</td>
+            <td>{{fuel_cell_info.0.max_power}}</td>
+            <td>{{fuel_cell_info.0.length}}</td>
+            <td>{{fuel_cell_info.0.width}}</td>
+            <td>{{fuel_cell_info.0.height}}</td>
+            <td></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endif %}
+
+
+{% endblock %}

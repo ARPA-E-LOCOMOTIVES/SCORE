@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script src="{% static 'js/vis/d3-data-model.js' %}"></script>
+<script src="{% static 'js/vis/d3-scatter-plot.js' %}"></script>
+
+<script type="text/babel">
+
+  function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = jQuery.trim(cookies[i]);
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+  var existing_locomotive_data = JSON.parse("{{edit_mode_data|escapejs}}");
+  var edit_mode_id = existing_locomotive_data['pk'];
+  var edit_mode_name = existing_locomotive_data['name'];
+  var edit_mode_description = existing_locomotive_data['description'];
+  var edit_mode_length = existing_locomotive_data['length'];
+  var edit_mode_width = existing_locomotive_data['width'];
+  var edit_mode_height = existing_locomotive_data['height'];
+  var edit_mode_number_axles = existing_locomotive_data['number_axles'];
+  var edit_mode_braking_force = existing_locomotive_data['braking_force'];
+  var edit_mode_fuel_capacity = existing_locomotive_data['fuel_capacity'];
+  var edit_mode_weight = existing_locomotive_data['weight'];
+  var edit_mode_cost = existing_locomotive_data['cost'];
+  var edit_mode_max_power = existing_locomotive_data['max_power'];
+  var edit_mode_power_to_wheels = existing_locomotive_data['power_to_wheels'];
+
+  class DieselGenerator extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        locomotive_name: edit_mode_name,
+        locomotive_description: edit_mode_description,
+        locomotive_length : edit_mode_length,
+        locomotive_width : edit_mode_width,
+        locomotive_height : edit_mode_height,
+        locomotive_number_axles : edit_mode_number_axles,
+        locomotive_braking_force : edit_mode_braking_force,
+        locomotive_fuel_capacity : edit_mode_fuel_capacity,
+        locomotive_weight : edit_mode_weight,
+        locomotive_cost : edit_mode_cost,
+        locomotive_max_power : edit_mode_max_power,
+        power_level: 0,
+        fuel_consumption: 0,
+        hc_emission : 0,
+        co_emission : 0,
+        no_emission : 0,
+        pm_emission : 0,
+        edit_mode_id: edit_mode_id,
+        items: [],
+        info_msg: ""
+      }
+      for (var i = 0; i < edit_mode_power_to_wheels.length; i++){
+        this.state.items.push(edit_mode_power_to_wheels[i]);
+      }
+      if (edit_mode_id != 0){
+        this.state.info_msg = "*consists using this diesel locomotive will need to be manually editted if you want the new submitted changes to apply"
+      }
+
+      console.log("loaded data into class");
+
+    }
+
+    updatePlot(){
+
+      var dataset = {};
+      dataset['tractionpower'] = [];
+      dataset['fuel_consumed'] = [];
+      dataset['hc_emission'] = [];
+      dataset['co_emission'] = [];
+      dataset['no_emission'] = [];
+      dataset['pm_emission'] = [];
+      for (var i = 0 ; i < this.state.items.length; i++){
+        dataset['tractionpower'].push(this.state.items[i][0]);
+        dataset['fuel_consumed'].push(this.state.items[i][1]);
+        dataset['hc_emission'].push(this.state.items[i][2]);
+        dataset['co_emission'].push(this.state.items[i][3]);
+        dataset['no_emission'].push(this.state.items[i][4]);
+        dataset['pm_emission'].push(this.state.items[i][5]);
+      }
+
+      console.log('loaded data into dataset');
+
+      for (var i = 1; i < 6; i++){
+        var dataModel = new d3DataModel(dataset);
+        var scatter_plot = new d3ScatterPlot();
+        scatter_plot.set_data_model(dataModel);
+        scatter_plot.set_data_x(dataModel.get_titles()[0]);
+        scatter_plot.set_plot_label_x(dataModel.get_titles()[0] + " (kW)")
+        scatter_plot.set_data_y(dataModel.get_titles()[i]);
+        var unit = " (g/h)"
+        var result = dataModel.get_titles()[i].search("emission")
+        if (result == -1){
+          unit = " (kg/h)"
+        }
+        scatter_plot.set_plot_label_y(dataModel.get_titles()[i] + unit)
+        scatter_plot.set_div('powercurve' + i);
+        scatter_plot.set_size(400, 200);
+        scatter_plot.set_point_size(4);
+        scatter_plot.refresh();
+      }
+
+      console.log('updated plot');
+
+    }
+
+    render() {
+
+      return (
+        <div>
+          <h2>Diesel Locomotive</h2>
+          Displays locomotive performance metrics and power/emissions curves as a function of power in kW.
+          <br/><br/>
+          <div class="row span12">
+            <div class="span2">
+              Name :
+            </div>
+            <div class="span1">
+              <input type="text" class="input-small" name="locomotive_name" value={this.state.locomotive_name} disabled/>
+            </div>
+
+            <div class="span2 offset2">
+              Description :
+            </div>
+            <div class="span1">
+              <input type="text" name="locomotive_description" value={this.state.locomotive_description} disabled/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Length (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_length"  value={this.state.locomotive_length} disabled/>
+            </div>
+            <div class="span2 offset2">
+              Width (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_width" value={this.state.locomotive_width}  disabled/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Height (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_height" value={this.state.locomotive_height} disabled/>
+            </div>
+            <div class="span2 offset2">
+              Number of Axles :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_number_axles" value={this.state.locomotive_number_axles} disabled/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Braking Force (N) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_braking_force" value={this.state.locomotive_braking_force} disabled/>
+            </div>
+            <div class="span2 offset2">
+              Fuel Capacity (kg) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_fuel_capacity" value={this.state.locomotive_fuel_capacity} isabled/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Weight (tonnes) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_weight" value={this.state.locomotive_weight} disabled/>
+            </div>
+            <div class="span2 offset2">
+              Acquisition Cost ($) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_cost" value={this.state.locomotive_cost} disabled/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Max Power (kW) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_max_power" value={this.state.locomotive_max_power}  disabled/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Max Power (hp) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_max_power_hp" value={(this.state.locomotive_max_power*1.34102).toFixed(1)}  disabled/>
+            </div>
+          </div>
+
+          <hr/>
+
+          <div class="row">
+            <div class="span8">
+              <h2>Power Curves</h2>
+              {this.updatePlot()}
+            </div>
+          </div>
+          <br/>
+        </div>
+      );
+    }
+  }
+
+  ReactDOM.render(<DieselGenerator />, document.querySelector("#app1"))
+
+</script>
+
+<div class="row">
+  <div class="span8 offset1">
+    <div id="app1"></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span4 offset1">
+    <div id="powercurve1"></div>
+  </div>
+  <div class="span6">
+    <div id="powercurve2"></div>
+  </div>
+</div>
+<div class="row">
+  <div class="span4 offset1">
+    <div id="powercurve3"></div>
+  </div>
+  <div class="span6">
+    <div id="powercurve4"></div>
+  </div>
+</div>
+<div class="row">
+  <div class="span6 offset1">
+    <div id="powercurve5"></div>
+  </div>
+  <div class="span6">
+    <div id="powercurve6"></div>
+  </div>
+</div>
+
+
+
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+
+<style>
+  .hero-unit {
+     background: url("{% static 'images/homepage1.jpg' %}");
+  }
+
+  .hero-unit img {
+   width: 100%; height: auto;
+  }
+
+</style>
+
+<div class="container">
+
+  <!-- Main hero unit for a primary marketing message or call to action -->
+  <div class="hero-unit">
+    <h2>Sorry, unable to process your request</h2>
+    <h2>{{error_message}}</h2>
+  </div>
+
+</div>
+
+
+{% endblock %}

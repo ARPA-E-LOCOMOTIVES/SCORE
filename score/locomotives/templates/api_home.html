@@ -1,0 +1,96 @@
+<!doctype html>
+{% load static %}
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <script src="{% static 'js/jquery.js' %}" crossorigin></script>
+    <script src="{% static 'js/bootstrap.min.js' %}" crossorigin></script>
+    <title>Django Celery</title>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <form>
+        {% csrf_token %}
+        <p>Run task for: 
+          <input name="number" id="id_number" novalidate> seconds
+        </p>
+        <button type="submit" class="btn btn-primary">Send</button>
+      </form>
+
+      <div class="mt-5">
+        <h2 class="title is-2">Tasks</h2>
+        <br>
+        <table class='table'>
+          <thead>
+            <tr>
+              <th>Task ID</th>
+              <th>Task state</th>
+              <th>Task percentage %</th>
+              <th>Task info</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+          $('form').submit(function(e) {
+            e.preventDefault()
+
+            $.ajax({
+              url: '/api/run-long-task/',
+              type: 'POST',
+              data: {
+                l: $('#id_number').val(),
+                csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+              }
+            })
+            .done((response) => {
+              updateState(response.task_id)
+            })
+            .fail((error) => console.log(error))
+          })
+
+          function updateState(taskID) {
+            $.ajax({
+              url: `/api/task-status/${taskID}/`,
+              type: 'GET'
+            })
+            .done(response => {
+              const data = `
+                <th>${response.task_id}</th>
+                <td>${response.state}</td>
+                <td>${response.progression}</td>
+                <td>${response.info}</td>
+                `
+              const tr = $('#' + response.task_id)
+              // if the element exists, update it
+              if (tr.length) { 
+                tr.html(data)
+              }
+              // otherwise, create a new row in the table
+              else {
+                const tableBody = `<tr id='${response.task_id}'>${data}</tr>`
+                $('tbody').append(tableBody)
+              }
+              
+              // task is finished
+              if (response.state == "FAILURE" || response.state == "SUCCESS") {return false}
+              // rerun every 2 seconds
+              setTimeout(function() {
+                updateState(response.task_id)
+              }, 2000)
+            })
+            .fail(error => console.log(error))
+          }
+        })
+    </script>
+  </body>
+</html>

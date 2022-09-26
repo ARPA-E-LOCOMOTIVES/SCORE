@@ -1,0 +1,91 @@
+{% load static %}
+
+
+<style>
+  .hero-unit {
+     background: url("{% static 'images/homepage1.jpg' %}");
+  }
+
+  .hero-unit img {
+   width: 100%; height: auto;
+  }
+
+</style>
+
+<script src="{% static 'js/bootstrap.min.js' %}" crossorigin></script>
+<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/bootstrap-responsive.min.css' %}">
+
+
+<div class="navbar">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">SCORE ARPA-E LOCOMOTIVES</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Main hero unit for a primary marketing message or call to action -->
+  <div class="hero-unit">
+    <h2>We just need some information and will email you login instructions</h2>
+  </div>
+
+  <form action="{% url 'submit_signup'  %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="row">
+      <div class="span2">
+        First Name :
+      </div>
+      <div class="span1">
+        <input class="input" name="first_name"/>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        Last Name :
+      </div>
+      <div class="span1">
+        <input class="input" name="last_name"/>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        Email :
+      </div>
+      <div class="span1">
+        <input class="input" name="email"/>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        Phone :
+      </div>
+      <div class="span1">
+        <input class="input" name="phone"/>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        Company :
+      </div>
+      <div class="span1">
+        <input class="input" name="company"/>
+      </div>
+    </div>
+
+    <br />
+    <div class="row">
+      <div class="span2 offset2">
+        <button type="submit" class="btn btn-primary" >Send</button>
+      </div>
+    </div>
+  </form>
+
+</div>

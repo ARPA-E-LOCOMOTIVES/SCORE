@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script src="{% static 'js/vis/d3-heat-map.js' %}"></script>
+
+<script type="text/babel">
+
+  function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = jQuery.trim(cookies[i]);
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+  var existing_locomotive_data = JSON.parse("{{edit_mode_data|escapejs}}");
+  var edit_mode_id = existing_locomotive_data['pk'];
+  var edit_mode_power_in = existing_locomotive_data['power_in'];
+  var edit_mode_power_out = existing_locomotive_data['power_out'];
+
+  var edit_in_table = edit_mode_power_in['outs']
+  // improve this, maybe some find of figure
+
+
+
+
+
+  function clear_power_data_display(name){
+    if (name == 'power_in_text'){
+      $("#power_in_text_field").val("need to Submit to process new data");
+      $("#power_in_heat_map").html("");
+      $("#power_in_data_div").html("");
+    }
+    if (name == 'power_out_text'){
+      $("#power_out_text_field").val("need to Submit to process new data");
+      $("#power_out_heat_map").html("");
+      $("#power_out_data_div").html("");
+    }
+
+  }
+
+
+  class ElectricGenerator extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        locomotive_name: existing_locomotive_data['name'],
+        locomotive_description: existing_locomotive_data['description'],
+        locomotive_length : existing_locomotive_data['length'],
+        locomotive_width : existing_locomotive_data['width'],
+        locomotive_height : existing_locomotive_data['height'],
+        locomotive_number_axles : existing_locomotive_data['number_axles'],
+        locomotive_braking_force : existing_locomotive_data['braking_force'],
+        locomotive_fuel_capacity : existing_locomotive_data['fuel_capacity'],
+        locomotive_weight : existing_locomotive_data['weight'],
+        locomotive_cost : existing_locomotive_data['cost'],
+        locomotive_efficiency_in: existing_locomotive_data['efficiency_in'],
+        locomotive_efficiency_out: existing_locomotive_data['efficiency_out'],
+        locomotive_max_power_in : existing_locomotive_data['max_power_in'],
+        locomotive_max_power_out : existing_locomotive_data['max_power_out'],
+        locomotive_max_usable_energy : existing_locomotive_data['max_usable_energy'],
+        power_in_text : edit_mode_power_in,
+        power_out_text : edit_mode_power_out,
+        edit_mode_id: edit_mode_id,
+        items: [],
+        info_msg: ""
+      }
+      if (edit_mode_id != 0){
+        this.state.info_msg = "*consists using this electric locomotive will need to be manually editted if you want the new submitted changes to apply"
+      }
+    }
+
+    updateMetric(event) {
+      const { target: { name, value } } = event;
+      this.setState({ [name]: value });
+    }
+
+    updateLocomotivePowerFile(event) {
+      const { target: { name, value } } = event;
+      var f = event.target.files[0];
+      if (f) {
+        var r = new FileReader();
+        r.addEventListener("load", () => {
+          // this will then display a text file
+          this.setState({
+            [name]: r.result
+          });
+          clear_power_data_display(name);
+        }, false);
+        r.readAsText(f);
+      }
+    }
+
+
+    render() {
+
+      return (
+        <div>
+          <h2>Battery/Electric Locomotive</h2>
+          Displays locomotive performance metrics.
+          <br/><br/>
+          <div class="row span12">
+            <div class="span2">
+              Name :
+            </div>
+            <div class="span1">
+              <input type="text" class="input-small" name="locomotive_name" value={this.state.locomotive_name} disabled/>
+            </div>
+            <div class="span2 offset2">
+              Description :
+            </div>
+            <div class="span1">
+              <input type="text" name="locomotive_description" value={this.state.locomotive_description} disabled/>
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Length (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_length" value={this.state.locomotive_length} disabled />
+            </div>
+            <div class="span2 offset2">
+              Width (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_width" value={this.state.locomotive_width} disabled />
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Height (m) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_height" value={this.state.locomotive_height} disabled />
+            </div>
+            <div class="span2 offset2">
+              Number of Axles :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_number_axles" value={this.state.locomotive_number_axles} disabled />
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Braking Force (N) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_braking_force" value={this.state.locomotive_braking_force} disabled />
+            </div>
+            <div class="span2 offset2">
+              Max Usable Energy (kW hr) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_max_usable_energy" value={this.state.locomotive_max_usable_energy} disabled />
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Weight (tonnes) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_weight" value={this.state.locomotive_weight} disabled />
+            </div>
+            <div class="span2 offset2">
+              Acquisition Cost ($) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_cost" value={this.state.locomotive_cost} disabled />
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Efficiency in (%) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_efficiency_in" value={this.state.locomotive_efficiency_in} disabled />
+            </div>
+            <div class="span2 offset2">
+              Efficiency out (%) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_efficiency_out" value={this.state.locomotive_efficiency_out} disabled />
+            </div>
+          </div>
+          <div class="row span12">
+            <div class="span2">
+              Max Power In (kW) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_max_power_in" value={this.state.locomotive_max_power_in} disabled />
+            </div>
+            <div class="span2 offset2">
+              Max Traction Power Out(kW)
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_max_power_out" value={this.state.locomotive_max_power_out} disabled />
+            </div>
+          </div>
+
+          <div class="row span12">
+            <div class="span2">
+              Max Power In (hp) :
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_max_power_in_hp" value={(this.state.locomotive_max_power_in*1.34102).toFixed(1)} disabled />
+            </div>
+            <div class="span2 offset2">
+              Max Traction Power Out (hp)
+            </div>
+            <div class="span1">
+              <input type="number" class="input-small" name="locomotive_max_power_out_hp" value={(this.state.locomotive_max_power_out*1.34102).toFixed(1)} disabled />
+            </div>
+          </div>
+
+
+          <hr/>
+
+        </div>
+      );
+    }
+  }
+
+  ReactDOM.render(<ElectricGenerator />, document.querySelector("#app1"))
+
+
+</script>
+<div class="row">
+  <div class="span10 offset1">
+    <!-- <a href="\create-electric-locomotive-modified">Go to a Modified Builder</a> -->
+    <div id="app1"></div>
+  </div>
+</div>
+<br/>
+
+
+{% endblock %}

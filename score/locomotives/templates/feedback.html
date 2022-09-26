@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+
+<div class="row">
+  <div class="span10 offset1">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">User</th>
+          <th scope="col">Feedback</th>
+          <th scope="col">DateTime</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fb in feedback %}
+        <tr>
+          <th>{{fb.user.username}}</th>
+          <td>{{fb.description}}</td>
+          <td>{{fb.log_time}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,138 @@
+{% load static %}
+
+<style>
+  .hero-unit {
+     background: url("{% static 'images/homepage1.jpg' %}");
+  }
+
+  .hero-unit img {
+   width: 100%; height: auto;
+  }
+
+</style>
+
+<script src="{% static 'js/bootstrap.min.js' %}" crossorigin></script>
+<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/bootstrap-responsive.min.css' %}">
+
+
+<div class="navbar">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">SCORE ARPA-E LOCOMOTIVES</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Main hero unit for a primary marketing message or call to action -->
+  <div class="hero-unit">
+    <h2>Add or Ignore User</h2>
+  </div>
+
+  <form action="{% url 'adduser'  %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="row">
+      <div class="span2">
+        User Name :
+      </div>
+      <div class="span1">
+        <input class="input" name="username" value={{user_request.email}} />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        Email :
+      </div>
+      <div class="span1">
+        <input class="input" name="email" value={{user_request.email}} />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        First Name :
+      </div>
+      <div class="span1">
+        <input class="input" name="first_name" value={{user_request.first_name}} />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        Last Name :
+      </div>
+      <div class="span1">
+        <input class="input" name="last_name" value={{user_request.last_name}} />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        Password :
+      </div>
+      <div class="span1">
+        <input type="password" name="password0" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="span2">
+        Reenter Password :
+      </div>
+      <div class="span1">
+        <input type="password" name="password1" />
+      </div>
+    </div>
+
+    <br/>
+    <div class="row">
+      <div class="span4">
+        <h4>User Company Name : {{user_request.company}}</h4></br>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="span2">
+        <h4>Add To Existing Groups</h4>
+      </div>
+    </div>
+
+    {% for gp in groups %}
+      <div class="row">
+        <div class="span2">
+          {% if gp.name != 'public' %}
+            <h4><input type="checkbox" id="checkbox_{{gp.id}}" name="checkbox_{{gp.id}}"> {{gp.name}}</h4>
+          {% else %}
+            <h4><input type="checkbox" id="checkbox_{{gp.id}}" name="checkbox_{{gp.id}}" checked> {{gp.name}}</h4>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    <br/>
+    <div class="row">
+      <div class="span2">
+        <h4><input type="checkbox" id="newgroup" name="newgroup"> Add New Group Name</h4>
+      </div>
+      <div class="span1">
+        <input class="input" name="group_name" />
+      </div>
+    </div>
+
+    <br />
+    <input type="hidden" value="{{ user_request.id }}" name="user_request_id">
+    <div class="row">
+      <div class="span2">
+        <button type="submit" class="btn btn-primary" >Add User</button>
+      </div>
+      <div class="span2">
+        <a class="btn btn-defualt" href="/ignore-user/{{user_request.id}}">Ignore User</a>
+      </div>
+    </div>
+  </form>
+
+</div>

@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<div class="row-fluid">
+  <div class="span6">
+    <div style="margin:10px">
+      <h2>Route : {{ route.name }}</h2>
+        Detailed information of the route, including elevation data <a href="https://nationalmap.gov/epqs/">(USGS Elevation Service)</a>, gradient, curvature, and maximum speed along the route.</br>
+      <div id="map" style="height:600px;width:600px"></div>
+    </div>
+  </div>
+
+  <div class="span6">
+    <div style="margin:10px">
+      <h4>Elevation</h4>
+      <div id="elevation_chart" style="margin-left: 0px; height: 160px; width: 600px;"></div>
+      <h4>Gradient Percentage</h4>
+      <div id="gradient_chart" style="margin-left: 0px; height: 160px; width: 600px;"></div>
+      <h4>Degree Curvature per 100ft Chord</h4>
+      <div id="curvature_chart" style="margin-left: 0px; height: 160px; width: 580px;"></div>
+      <h4>Max Speed</h4>
+      <div id="max_speed_chart" style="margin-left: 0px; height: 160px; width: 600px;"></div>
+      <b>Zoom</b> : left mouse drag<br>
+      <b>Reset Zoom</b> : double left mouse click<br><br>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/d3.d4.min.js' %}"></script>
+<script src="{% static 'js/vis/d3-line-plot.js' %}"></script>
+<script src="{% static 'js/map/map_route.js' %}"></script>
+<script src="{% static 'js/vis/d3-stacked-bar-plot.js' %}"></script>
+
+  <script>
+
+    // var open_railway_map_layer = new L.TileLayer('http://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
+    // {
+    //   attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a> and OpenStreetMap',
+    //   minZoom: 2,
+    //   maxZoom: 19,
+    //   tileSize: 256,
+    //   opacity: 0.4
+    // });
+    //
+    // var google_map_layer = new L.tileLayer.grayscale('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+    //     maxZoom: 19,
+    //     subdomains:['mt0','mt1','mt2','mt3']
+    // });
+    //
+    // //var open_street_map_layer = new L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // //	maxZoom: 19,
+    // //	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // //})
+    //
+    // var map = new L.Map("map", {
+    // 	center: new L.LatLng(40.0, -82.86),
+    // 	zoom: 5,
+    //   layers: [google_map_layer, open_railway_map_layer]
+    // });
+
+    // set size of map and list
+    //var width = Math.min(1280,window.innerWidth);
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+
+    var line_plot_width = 0.44*width;
+    var map_width = line_plot_width;
+    var control_height = 0.7*map_width;
+    var plot_height = control_height/4;
+
+    document.getElementById('elevation_chart').setAttribute("style","width:" + line_plot_width + "px;height:" + plot_height + "px;margin:10px");
+    document.getElementById('elevation_chart').style.width=line_plot_width + 'px';
+    document.getElementById('elevation_chart').style.height=plot_height + 'px';
+
+    document.getElementById('gradient_chart').setAttribute("style","width:" + line_plot_width + "px;height:" + plot_height + "px;margin:10px");
+    document.getElementById('gradient_chart').style.width=line_plot_width + 'px';
+    document.getElementById('gradient_chart').style.height=plot_height + 'px';
+
+    document.getElementById('curvature_chart').setAttribute("style","width:" + line_plot_width + "px;height:" + plot_height + "px;margin:10px");
+    document.getElementById('curvature_chart').style.width=line_plot_width + 'px';
+    document.getElementById('curvature_chart').style.height=plot_height + 'px';
+
+    document.getElementById('max_speed_chart').setAttribute("style","width:" + line_plot_width + "px;height:" + plot_height + "px;margin:10px");
+    document.getElementById('max_speed_chart').style.width=line_plot_width + 'px';
+    document.getElementById('max_speed_chart').style.height=plot_height + 'px';
+
+    document.getElementById('map').setAttribute("style","width:" + map_width + "px;height:" + control_height + "px;margin:10px");
+    document.getElementById('map').style.width=map_width + 'px';
+    document.getElementById('map').style.height=control_height + 'px';
+
+    var routeLines = []
+    var routeDistances = []
+    var elevationLines = []
+    var realelevationLines = []
+    var curvatureLines = []
+    var maxspeedLines = []
+    var positive_gradients = []
+    var negative_gradients = []
+
+    var data = JSON.parse("{{data|escapejs}}");
+    for(var line in data){
+      routeLines.push({"type": "LineString", "coordinates": [[data[line][0], data[line][1]], [data[line][2], data[line][3]]]});
+      routeDistances.push(0.000621371*data[line][4]);
+      elevationLines.push({x:  0.000621371*data[line][4], y: 3.28084*data[line][5]});
+      realelevationLines.push({x:  0.000621371*data[line][4], y: 3.28084*data[line][8]});
+      curvatureLines.push({x:  0.000621371*data[line][4], y: data[line][9]});
+      maxspeedLines.push({x:  0.000621371*data[line][4], y: 2.23694*data[line][10]});
+      if (data[line][6] >= 0){
+        positive_gradients.push({x:  0.000621371*data[line][4], y: 100*data[line][6]});
+        negative_gradients.push({x:  0.000621371*data[line][4], y: 0});
+      } else if (data[line][6] < 0)  {
+        negative_gradients.push({x:  0.000621371*data[line][4], y: 100*data[line][6]});
+        positive_gradients.push({x:  0.000621371*data[line][4], y: 0});
+      }
+    }
+
+    //L.geoJSON(routeLines).addTo(map);
+    var map_route = new MapRoute(routeLines, routeDistances);
+
+    // add gradient plot as bars
+    var gradient_map = {};
+    gradient_map['y'] = "#0000ffaa";
+
+    var elevation_plot = new d3LinePlot(elevationLines, 'elevation_chart');
+    //var elevation_plot = new d3StackedBarPlot(elevationLines, 'elevation_chart', gradient_map);
+    elevation_plot.set_size(line_plot_width, plot_height);
+    elevation_plot.set_titles("distance (mi)", "feet");
+    elevation_plot.draw();
+
+    var gradient_plot = new d3StackedBarPlot(positive_gradients, 'gradient_chart', gradient_map);
+    gradient_plot.set_size(line_plot_width, plot_height);
+    gradient_plot.assign_negative_bars(negative_gradients);
+    gradient_plot.set_titles("distance (mi)", "gradient");
+    gradient_plot.draw();
+    //gradient_plot2.assign_negative_bars(negative_gradients);
+
+    //var curve_plot = new d3LinePlot(curvatureLines, 'curvature_chart');
+    var curve_plot = new d3StackedBarPlot(curvatureLines, 'curvature_chart', gradient_map);
+    curve_plot.set_size(line_plot_width, plot_height);
+    curve_plot.set_titles("distance (mi)", "degrees");
+    curve_plot.draw();
+
+    //var max_speed_plot = new d3LinePlot(maxspeedLines, 'max_speed_chart');
+    var max_speed_plot = new d3StackedBarPlot(maxspeedLines, 'max_speed_chart', gradient_map);
+    max_speed_plot.set_size(line_plot_width, plot_height);
+    max_speed_plot.set_titles("distance (mi)", "mph");
+    max_speed_plot.draw();
+
+    // add listeners for each plot
+    var all_plot_listeners = [elevation_plot, gradient_plot, curve_plot, max_speed_plot, map_route];
+    for (var i = 0 ; i < all_plot_listeners.length; i++)
+      for (var j = 0 ; j < all_plot_listeners.length; j++)
+        if (i != j)
+          all_plot_listeners[i].add_listener(all_plot_listeners[j]);
+
+  </script>
+
+
+
+{% endblock %}

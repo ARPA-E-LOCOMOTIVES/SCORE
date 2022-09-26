@@ -1,0 +1,122 @@
+{% load static %}
+<script src="{% static 'js/react.production.min.js' %}" crossorigin></script>
+<script src="{% static 'js/react-dom.production.min.js' %}" crossorigin></script>
+<script src="{% static 'js/babel.min.js' %}" crossorigin></script>
+<script src="{% static 'js/jquery.js' %}" crossorigin></script>
+<script src="{% static 'js/jquery-ui.min.js' %}" crossorigin></script>
+<script src="{% static 'js/bootstrap.min.js' %}" crossorigin></script>
+<script src="{% static 'js/leaflet.js' %}"></script>
+<script src="{% static 'js/tilelayergrayscale.js' %}"></script>
+<script src="{% static 'js/jquery.knob.min.js' %}" crossorigin></script>
+<link rel="stylesheet" href="{% static 'css/jquery-ui.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/bootstrap-responsive.min.css' %}">
+<link rel="stylesheet" href="{% static 'js/leaflet.css' %}"/>
+
+<div id="power_setting_details" style="height: 200px; width: 1000px;"></div>
+
+<script src="{% static 'js/d3.d4.min.js' %}"></script>
+<script src="{% static 'js/vis/d3-stacked-bar-plot.js' %}"></script>
+<script src="{% static 'js/vis/d3-bar-summary-chart.js' %}"></script>
+
+<script type="text/javascript">
+  const data_id = "{{ result_id }}";
+
+  var width = window.screen.width;
+  var plot_width = 7*width/10;
+  var results;
+  var all_plot_listeners = [];
+
+  $.ajax({
+    url: `/api/get_ltd_result/${data_id}/`,
+    type: 'GET'
+  })
+  .done((response) => {
+    results=response
+    const dist_m = results.data.distances;
+    var dist = dist_m.map(d =>  0.000621371*d)
+    const battery_data = results.data.energy.stored;
+
+    const max_speed_data = results.data.max;
+    const target_speed_data = results.data.targets;
+    const speed_data = results.data.speeds;
+    var combined = []
+    const rapid = results.rapid;
+    console.log(rapid);
+    for(var row in speed_data){
+      if(rapid == 'true'){
+        combined.push({x: dist[row], power_limited_speed: 2.23694*speed_data[row], track_limited_speed: 2.23694*max_speed_data[row]});
+      } else {
+        combined.push({x: dist[row], power_limited_speed: 2.23694*speed_data[row], track_limited_speed: 2.23694*target_speed_data[row], max_speed: 2.23694*max_speed_data[row]});
+      }
+    }
+
+    const diesel_power = results.data.power.diesel;
+    const battery_power = results.data.power.battery;
+    const fuelcell_power = results.data.power.fuelcell;
+    const regen_power = results.data.power.regen;
+    const track_power = results.data.power.track;
+    const train_power = results.data.power.train;
+    const accel_power = results.data.power.accel;
+    const braking_power = results.data.power.lost;
+
+    var sources = []
+    var source_summary = []
+    var sinks = []
+    var neg_sinks = []
+    var sinks_summary = []
+    var track_p = 0.0
+    var track_m = 0.0
+    var accel = 0.0
+    var decel = 0.0
+    for (row in accel_power){
+      if (track_power[row]>0.0) {
+        track_m = -1*track_power[row];
+        track_p = 0.0;
+      } else{
+        track_m = 0.0;
+        track_p = -1*track_power[row];
+      }
+      if (accel_power[row]>0.0) {
+        accel = -1*accel_power[row];
+        decel = 0.0;
+      } else{
+        accel = 0.0;
+        decel = -1*accel_power[row];
+      }
+      sources.push({x: dist[row], diesel: diesel_power[row]/745., fuelcell: fuelcell_power[row]/745., battery: battery_power[row]/745., track_gradient: track_p/745., decel: decel/745.});
+      source_summary.push({x: dist[row], diesel: diesel_power[row]/745., fuelcell: fuelcell_power[row]/745., battery: battery_power[row]/745.});
+      sinks.push({x: dist[row], y: 0})
+      neg_sinks.push({x: dist[row], drag: -1*train_power[row]/745., regen_braking: -1*regen_power[row]/745., track_gradient_curve: track_m/745., accel: accel/745., braking: -1*braking_power[row]/745.});
+      sinks_summary.push({x: dist[row], regen_braking: -1*regen_power[row]/745.});
+    }
+
+    var combined_color_map = {};
+    combined_color_map['battery'] = "green";
+    combined_color_map['diesel'] = "orange";
+    combined_color_map['regen_braking'] = "blue";
+    combined_color_map['fuelcell'] = "purple";
+
+    var summary_stacked_plot = new d3StackedBarPlot(source_summary, 'power_setting_details', combined_color_map);
+    summary_stacked_plot.assign_negative_bars(sinks_summary);
+    summary_stacked_plot.set_size(plot_width,180);
+    summary_stacked_plot.set_titles("distance (mi)", "power (hp)");
+    summary_stacked_plot.include_legend_area();
+    summary_stacked_plot.draw();
+
+  });
+
+  function add_plot_listener(plot) {
+    if (all_plot_listeners.length > 0 ) {
+      for (i in all_plot_listeners) {
+        var p = all_plot_listeners[i];
+        p.add_listener(plot);
+        plot.add_listener(p);
+      }
+      all_plot_listeners.push(plot);
+    } else {
+      all_plot_listeners.push(plot);
+    }
+  }
+
+</script>

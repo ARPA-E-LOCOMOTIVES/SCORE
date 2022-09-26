@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<br>
+
+<div class="row">
+  <div class="span4 offset1">
+    <h2><b>Analysis</b></h2><br>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span12 offset1">
+    <ul class="nav nav-pills" style="text-align: left;">
+        <li class="active"><a href="#first" data-toggle="tab" id="first_tab">One Run</a></li>
+        <li><a href="#second" data-toggle="tab" id="second_tab">Trades</a></li>
+    </ul>
+    <div class="tab-content">
+        <div id="first" class="tab-pane fade in active">
+          <h4><b>Select a route, consist, and a policy</b></h4><br>
+          <form action="{% url 'runltd' %}" method="post">{% csrf_token %}
+            <div class="row">
+              <div class="span4 offset1">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Routes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for id, route_name in route_info.items %}
+                    <tr>
+                      <th>
+                        <div style="height:28px"><h4><input type="radio" name="routes" value={{id}} style="height:20px;width:20px" checked/> {{ route_name }} <a href="\route-info\{{id}}">view</a></h4></div>
+                      </th>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                <div class="span4">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Consists</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {% for id, consist_name in consist_info.items %}
+                          <tr>
+                            <th>
+                              <div style="height:28px"><h4><input type="radio" name="consists" value={{id}} style="height:20px;width:20px" checked/> {{ consist_name }} <a href="\consist-info\{{id}}">view</a></h4><br><br></div>
+                            </th>
+                          </tr>
+                        {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="span2">
+                  <h4><input type="checkbox" id="pre_analysis" name="pre_analysis" style="height:20px;width:20px"/> Rapid Analysis </h4><br>
+                  <button type="submit" class="btn btn-primary">Run</button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div id="second" class="tab-pane fade in">
+          <h4><b>Select routes and consists</b></h4><br>
+          <form action="{% url 'traderesults' %}" method="post">{% csrf_token %}
+            <div class="row">
+              <div class="span4 offset1">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Routes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for id, route_name in route_info.items %}
+                    <tr>
+                      <th>
+                        <div style="height:28px"><h4><input type="checkbox" name="routes" value={{id}} style="height:20px;width:20px" checked/> {{ route_name }} <a href="\route-info\{{id}}">view</a></h4></div>
+                      </th>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                <div class="span4">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Consists</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {% for id, consist_name in consist_info.items %}
+                          <tr>
+                            <th>
+                              <div style="height:28px"><h4><input type="checkbox" name="consists" value={{id}} style="height:20px;width:20px" checked/> {{ consist_name }} <a href="\consist-info\{{id}}">view</a></h4><br><br></div>
+                            </th>
+                          </tr>
+                        {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="span2">
+                  <h4><input type="checkbox" id="pre_analysis" name="pre_analysis" style="height:20px;width:20px" checked/> Rapid Analysis </h4><br>
+                  <button type="submit" class="btn btn-primary">Run</button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}

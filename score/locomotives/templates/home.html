@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<div class="container">
+
+  <!-- Main hero unit for a primary marketing message or call to action -->
+  <div class="hero-unit">
+    <h1>SCORE</h1>
+    <p><h2>Synthesis of COnsists as Rolling Energy micro-grids (v0.1 alpha)</h2></p>
+    <p>A toolset for exploring and optimizing energy, power, cost and emissions for rail transportation. Select a below category to begin using the interface</p>
+  </div>
+
+  <!-- Example row of columns -->
+  <div class="row">
+    <div class="span4">
+      <h2>Routes</h2>
+       <p> Routes downloaded from publically available databases to use as examples for power and emission analyses. These routes include elevation, gradient, curvature, and maximum speed details. </p>
+      <p><a class="btn" href="\routelist">Select</a></p>
+    </div>
+    <div class="span4">
+      <h2>Consists</h2>
+       <p> Define or select a train consist to perform power and emission analyses over routes.  Each consist includes a list of freight cars and locomotives.  </p>
+      <p><a class="btn" href="\consistlist">Select</a></p>
+   </div>
+    <div class="span4">
+      <h2>Analysis and Trade Studies</h2>
+       <p>Simulation tools to calculate energy, power, cost and emissions of consists over routes. The Analysis tab allows one to select a route and consist to perform a power and emission analysis.  The Trade studies tab allows one to select multiple routes and consists to support data exploration. </p>
+      <p><a class="btn" href="\analysis">Analysis</a> <a class="btn" href="\tradestudies">Trade Studies</a></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="span12">
+
+      <footer>
+        <p><div id="content"/> <a href="\about">About</a> . <a href="/contact">Contact Us</a> . <a href="https://www.arl.psu.edu/">ARL/Penn State</a>, <a href="https://www.engr.psu.edu/">PSU College of Engineering</a> . <a href="https://altoona.psu.edu/academics/bachelors-degrees/rail-transportation-engineering">PSU Rail Transportation Engineering</a> </p>
+      </footer>
+    </div>
+  </div>
+
+  <hr>
+
+</div> <!-- /container -->
+
+
+
+
+{% endblock %}

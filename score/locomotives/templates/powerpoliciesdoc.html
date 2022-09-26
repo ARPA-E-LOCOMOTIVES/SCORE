@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<div class="row">
+  <div class="span4 offset1">
+    <h4>SCORE balanced energy policy</h4>
+  </div>
+  <div class="span8">
+    The SCORE minimum energy policy balances energy usage between locomotive types, to reduce energy cost while minimizing travel time. This policy uses maximum regenerative braking. The policy uses an LP optimization algroithm to solve the optimal levels of diesel, battery, and fuel cell along the route.
+    <img src="{% static 'images/scorepower_1.png' %}"></img>
+  </div>
+</div>
+<br><br>
+
+<div class="row">
+  <div class="span4 offset1">
+    <h4>Custom Power and Braking Policy - Maximum Braking</h4>
+  </div>
+  <div class="span8">
+    All available locomotive braking is applied (dynamic and regenerative) when necessary to minimize travel time resulting in fastest transit time.
+  </div>
+</div>
+<br><br>
+
+<div class="row">
+  <div class="span4 offset1">
+    <h4>Custom Power and Braking Policy - Maximum Regenerative </h4>
+  </div>
+  <div class="span8">
+    The analysis maximizes the usage of regenerative braking for energy storage.
+  </div>
+</div>
+<br><br>
+
+<div class="row">
+  <div class="span4 offset1">
+    <h4>Custom Power and Braking Policy - Coasting</h4>
+  </div>
+  <div class="span8">
+    The analysis using coasting to minimize the use of any braking, which results in a slower transit time.
+  </div>
+</div>
+<br><br>
+
+<div class="row">
+  <div class="span4 offset1">
+    <h4>Order of Locomotive Energy Usage</h4>
+  </div>
+  <div class="span8">
+    The order of the consist locomotives types which are used first to meet the power demands along a route.
+  </div>
+</div>
+<br><br>
+
+
+{% endblock %}
