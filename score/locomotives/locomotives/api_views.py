@@ -70,6 +70,8 @@ def evaluate(request):
     c = Consist.objects.get(id=consist_id)
     # we can change the max speed later on in the interface
     p, created = Policy.objects.get_or_create(type=policy_type, power_order=power_order, braking=braking, max_speed=max_speed)
+    
+    print("about to get an LTDResults object with session: ", session)
 
     result, created = LTDResults.objects.get_or_create(
        route = r,
@@ -86,7 +88,7 @@ def evaluate(request):
 
     task = eval_ltd.delay(result.id)
 
-    # print("new LTDResult: ", created, result.id)
+    print("new LTDResult: ", created, result.id)
 
     # return JsonResponse({'result_id': result.id}, status=202)
     return JsonResponse({'result_id': result.id}, status=202)

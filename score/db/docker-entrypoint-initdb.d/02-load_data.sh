@@ -1,0 +1,1 @@
+psql -d ${SCORE_DB} -f data/db.sql

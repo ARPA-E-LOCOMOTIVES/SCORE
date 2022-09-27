@@ -14,7 +14,7 @@ services:
       - db
       - redis
   db:
-    user: "26:26" # run as postgres user
+    # user: "26:26" # run as postgres user
     build:
       context: ./db
       dockerfile: ./Dockerfile
@@ -35,6 +35,19 @@ services:
     build: ./redis
     ports: 
       - "6379:6379"
+  celery:
+    # restart: always
+    build: ./locomotives
+    image: score_worker
+    volumes: 
+      - ./locomotives/:/usr/src/locomotives/
+    command: celery -A config worker -l INFO
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - db
+      - redis
+      - web
 
   
 volumes:
