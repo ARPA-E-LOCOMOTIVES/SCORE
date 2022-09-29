@@ -1,9 +1,16 @@
+// Copyright (c) 2022, The Pennsylvania State University
+// All rights reserved.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR 
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+// FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 
 // bar plot based on d3
 //
 // assume a data object , where the object is a list of dictionaries, where the dictionary
 // includes an x value, and total is assumed to be the height of the bars. An optional color_map variable
 // can be included to color the bars based on the total value
+
 class d3BarPlot {
 
   constructor(data, div_id, color_map=undefined) {

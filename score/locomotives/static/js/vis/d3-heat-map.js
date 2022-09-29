@@ -1,3 +1,10 @@
+// Copyright (c) 2022, The Pennsylvania State University
+// All rights reserved.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR 
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+// FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+
 class d3HeatMap {
 
   constructor(data, myGroups, myVars, div_id, min, max, x_label, y_label, x_min, x_max, title_label) {
