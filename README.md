@@ -20,11 +20,19 @@ SCORE is a web-based application. A web browser provides access to the backend s
 * Shutdown the server. From the command prompt that started docker-compose you can enter "docker-compose down -v". This will gracefully shut things down and remove any changes that were made or added to the database. If you would like the database to persist, do not include the "-v" option while shutting it down.
 
 
-Notes:
+### Notes:
 If no changes are made to the docker-compose.yml or corresponding Dockerfile for each of the containers, there is no need to include the "--build" option for subsequent start-ups.
+
 If you want to save your database to share with others or for backup, from the command line in the directory that has the docker-compose.yml file enter "docker-compose exec db pg_dump locomotives > db.sql" then replace the existing db.sql file with this new one by moving it to db/docker-entrypoint-initdb.d/data
+
 If you want to see more about what is going on with the docker containers enter "docker-compose logs -f". This will display the logs from all of the containers as they are running - the output to each of their stdout.
 
-Limitations:
+### Limitations:
 The web server used in this implementation is for development use only. It is the one provided by Django (the python-based web application server used). If you are viewing the logs, you will see each request get logged. This is because it is running in "debug" mode. 
 Since the server is running in debug mode, it is possible to make changes to the python code and have them immediately take effect without restarting. Once the file is saved, the server will automatically restart.
+
+## REST API
+The web-server portion of the application takes advantage of a REST API that was created using the Django Rest Framework. There are 2 files locates in score/utility that give examples of how to connect to the REST api usign either Python or Matlab. One of the key elements of both examples is the need to get an Authorization Token first by passing a userid and password. The Python example is in "notebook" format for use in an interactive session for data analysis such as with Pandas, but it can easily be modified as needed.
+
+## Acknowledgements
+This research was supported by Dr. Robert Ledoux from ARPA-E as part of the LOCOMOTIVES research program.
