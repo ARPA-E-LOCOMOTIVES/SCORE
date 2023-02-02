@@ -13,21 +13,30 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+ENV APP_HOME=/usr/src/locomotives
+
 # set work directory
-WORKDIR /usr/src/locomotives
+WORKDIR $APP_HOME
+RUN mkdir $APP_HOME/staticfiles
 
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
 # copy entrypoint.sh
-COPY ./entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//g' /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY ./entrypoint.sh .
+RUN sed -i 's/\r$//g' $APP_HOME/entrypoint.sh
+RUN chmod +x $APP_HOME/entrypoint.sh
 
 # copy project
-COPY . .
+COPY . $APP_HOME
+
+# make app user
+RUN groupadd -r app && useradd --no-log-init -r -g app app
+RUN chown -R app:app $APP_HOME
+
+# USER app
 
 # run entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/usr/src/locomotives/entrypoint.sh"]
 
 HEALTHCHECK NONE

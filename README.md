@@ -13,7 +13,9 @@ SCORE is a web-based application. A web browser provides access to the backend s
 
 * Clone the repository. From the command prompt on your desired system (WSL2 Ubuntu prompt on windows), clone the repository. Git is already part of Mac, Linux and WSL2 Ubuntu.
 
-* Build and start the containers. Change directory to "score". It should have the docker-compose.yml file in it. In this directory enter "docker-compose up -d --build". The first time you execute this command it will take a few minutes to load all of the images onto your computer. This will build the images and then start them. It will also populate the database with soem initial route and consist data.
+* Build and start the development containers. Change directory to "score". It should have the docker-compose.yml file in it. In this directory enter "docker compose up -d --build". The first time you execute this command it will take a few minutes to load all of the images onto your computer. This will build the images and then start them. It will also populate the database with soem initial route and consist data.
+
+* There is a "production" version of the docker-compose file included. This file adds gunicorn to execute the Django code NGINX to route requests to static reousrces and to gunicorn for the dyanmic sources. These containers are built using "docker compose -f docker-compose.prod.yml build". They can then be started with "docker compose -f docker-compose.prod.yml up -d" The "-d" option makes the processes start in the background. 
 
 * Access the server with a web browser. It this point you should be able to go to the login page by simply entering the URL "localhost:8000" into you web browser. Most of our testing has used Chrome.
 

@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  web:
+    build: 
+      context: ./locomotives
+      dockerfile: ./Dockerfile
+      tags: 
+        - "score_web_prod:1.0"
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ./locomotives/:/usr/src/locomotives/
+      - static_volume:/usr/src/locomotives/staticfiles
+    expose:
+      - 8000
+    env_file:
+      - ./.env.prod
+    depends_on:
+      - db
+      - redis
+  nginx:
+    build:
+      context: ./nginx
+      tags:
+        - "score_nginx:1.0"
+    volumes:
+      - static_volume:/usr/src/locomotives/staticfiles
+    ports:
+      - 1337:80
+    depends_on:
+      - web
+  db:
+    # user: "26:26" # run as postgres user
+    build:
+      context: ./db
+      dockerfile: ./Dockerfile
+      tags: 
+        - "score_db:1.0"
+    image: score_db
+    container_name: score_db
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=score123
+      - SCORE_USER=locuser
+      - SCORE_PASSWORD=locteam
+      - SCORE_DB=locomotives
+      # - POSTGRES_PASSWORD=locteam
+      # - POSTGRES_DB=locomotives
+  redis:
+    build: 
+      context: ./redis
+      dockerfile: ./Dockerfile
+      tags: 
+        - "score_redis:1.0"
+    ports: 
+      - "6379:6379"
+  celery:
+    # restart: always
+    build: 
+      context: ./locomotives
+      dockerfile: ./Dockerfile
+      tags: 
+        - "score_celery:1.0"
+    image: score_worker
+    volumes: 
+      - ./locomotives/:/usr/src/locomotives/
+    command: celery -A config worker -l INFO
+    env_file:
+      - ./.env.prod
+    depends_on:
+      - db
+      - redis
+      - web
+
+  
+volumes:
+  pg_data:
+  static_volume:

@@ -6,7 +6,7 @@ services:
       context: ./locomotives
       dockerfile: ./Dockerfile
       tags: 
-        - "score_web:1.0"
+        - "score_web_dev:1.0"
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./locomotives/:/usr/src/locomotives/

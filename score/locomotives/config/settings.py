@@ -24,6 +24,8 @@ DEBUG = int(os.environ.get("DEBUG", default=0))
 # For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]'
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_ALLOWED_ORIGINS").split(" ")
+
 
 # Application definition
 
@@ -143,8 +145,9 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 STATIC_URL = os.path.join(BASE_DIR, "/static/")
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
+   os.path.join(BASE_DIR, "static"),
 )
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
