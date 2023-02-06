@@ -3,9 +3,9 @@ FROM python:3.10-slim-bullseye
 
 USER 0
 
-RUN apt update -y  && \
-    apt install -y ncat && \
-    apt clean && \
+RUN apt-get update -y  && \
+    apt-get install -y ncat && \
+    apt-get clean && \
     rm -rf /var/cache/apt
 
 # set environment variables
@@ -20,6 +20,8 @@ WORKDIR $APP_HOME
 RUN mkdir $APP_HOME/staticfiles
 
 COPY ./requirements.txt .
+# remove this line before committing
+RUN pip config set global.index-url https://artifactory.arl.psu.edu/artifactory/api/pypi/pypi/simple
 RUN pip install -r requirements.txt
 
 # copy entrypoint.sh

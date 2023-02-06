@@ -1,9 +1,9 @@
 FROM postgres:12-bullseye
 
 USER root
-RUN apt update -y && \
+RUN apt-get update -y && \
 #     apt install -y dos2unix && \
-    apt clean && \
+    apt-get clean && \
     rm -rf /var/cache/apt
 
 # COPY ./docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/

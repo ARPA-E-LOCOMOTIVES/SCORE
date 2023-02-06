@@ -64,7 +64,7 @@ services:
       dockerfile: ./Dockerfile
       tags: 
         - "score_celery:1.0"
-    image: score_worker
+    image: score_celery
     volumes: 
       - ./locomotives/:/usr/src/locomotives/
     command: celery -A config worker -l INFO
