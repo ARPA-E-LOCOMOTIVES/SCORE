@@ -90,6 +90,14 @@ def feedback(request):
     log_action(request, 'feedback.html')
     return render(request, 'feedback.html', context)
 
+def documentation(request):
+    log_action(request, 'documentation.html')
+    return render(request, 'documentation.html', default_context(request))
+
+def detaileddocumentation(request):
+    log_action(request, 'detaileddocumentation.html')
+    return render(request, 'detaileddocumentation.html', default_context(request))
+
 def providefeedback(request):
     log_action(request, 'provide-feedback.html')
     return render(request, 'provide-feedback.html', default_context(request))
