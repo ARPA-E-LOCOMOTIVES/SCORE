@@ -12,6 +12,7 @@ import locomotives.policies as policies # load optimal LP code
 from .models import Route, Consist, Policy, LTDResults
 import numpy as np
 import math
+from .exceptions import OptimalLPException
 from scipy.integrate import solve_ivp
 from scipy.interpolate import interp1d
 from scipy.optimize import brentq
@@ -19,6 +20,7 @@ from scipy.optimize import brentq
 @app.task(bind=True)
 def eval_ltd(self, results_id):
     # get the route, consist, and policy to be evaluated
+    # print("Hello from the tack eval_ltd")
     results = LTDResults.objects.get(id=results_id)
     rapid = results.rapid 
     results.result_code = 1     # update result to indicate running
@@ -49,13 +51,18 @@ def eval_ltd(self, results_id):
         return x[0] - begin
     begin_segment.terminal = True
 
+    # this function returns the force applied by the wheels to the track
     def traction_force(v, power):
         if abs(power)< 1.0:
             res = 0.0
         else:
-            res = np.sign(power)*consist['traction_mass']* ltd.G * ltd.MU * 1000
-            if v>1.0:
-                res = np.sign(power) * min(np.abs(power)/v, consist['traction_mass']* ltd.G * ltd.MU * 1000)
+            # if power is negative we aren't going to constrain force since we will be using air brakes?
+            if power<0.0:
+                res = power/v
+            else:
+                res = consist['traction_mass']* ltd.G * ltd.MU * 1000
+                if v>1.0:
+                    res = min(power/v, consist['traction_mass']* ltd.G * ltd.MU * 1000)
         return res
 
     # define a function for the train dynamics
@@ -129,6 +136,8 @@ def eval_ltd(self, results_id):
         track_resistance = interp1d(node_distance, track_drag, bounds_error=False, fill_value=0.0, assume_sorted=True)
         results.status= 10
         results.save()
+
+        # print(limits)
         
         # generate target speeds that include maximum braking constraints
         # these will change depending on powering/braking policy policy
@@ -139,24 +148,34 @@ def eval_ltd(self, results_id):
             j = i
             # we are slowing down and haven't run past the begining
             while ((int1['target_speed']<int0['target_speed']) and (j>0)):
-                state1 = [int1['start'], int1['target_speed']] # ending or begining state for backward integration
-                # apply maximum braking
-                braking = limits['max_braking']
+                state1 = [int1['start'], int1['target_speed']] # ending or beginning state for backward integration
+                # apply maximum dynamic braking
+                braking_force = traction_force(int1['target_speed'], limits['max_braking'])
                 # need to determine if we are "steep" - is the drag + gradient + braking < 0
-                steep = int0["curve_drag"] + int0["gradient_drag"] + train_resistance(int0['target_speed']) + 0.95 * braking/int0['target_speed']               
+                speed1 = int1['target_speed']
+                drag = int0['curve_drag'] + int0['gradient_drag'] + train_resistance(speed1)
+                steep = drag + 0.95 * braking_force               
                 if steep < 0.0:
+                    # print(f"braking {braking_force} drag: {drag} location {int1['start']} speed {int1['target_speed']}")
                     # we need even more braking add 10% to the minimum required
-                    braking = -1.1*(int0["curve_drag"] + int0["gradient_drag"] + train_resistance(int0['target_speed']))*int0['target_speed']
+                    braking_force = -1.1*drag
+                    # print(f"braking: {braking} position at start {int1['start']}")
 
                 if rapid:
-                    # drag at start of interval
-                    speed1 = int1['target_speed']
-                    drag1 = int0['curve_drag'] + int0['gradient_drag'] + train_resistance(speed1)
-                    acc = (traction_force(speed1, 0.95 * braking) + drag1)/(consist['mass']*1000)
-                    speed0 = math.sqrt(acc * 2 * int0['length'] + speed1*speed1)
+                    # (de)acceleration
+                    acc =  0.95 * braking_force/(consist['mass']*1000)
+                    if (acc * 2 * int0['length'] + speed1*speed1)<0.0:
+                        # print(f"acc: {acc}, speed1: {speed1} braking_force: {braking_force}")
+                        speed0=1.0
+                    else:
+                        speed0 = math.sqrt(acc * 2 * int0['length'] + speed1*speed1)
 
                 else:
-                    speed0 = back_est(state1, -0.95 * braking, int0['start'])
+                    braking_power = -0.95*braking_force*speed1
+                    # print(f"braking power: {braking_power}")
+                    speed0 = back_est(state1, braking_power, int0['start'])
+
+                # print(f"speed1: {speed1} speed0: {speed0} location: {int1['start']}")
 
                 if speed0<int0['target_speed']:
                     # need to move back an interval to slow down sooner
@@ -246,7 +265,10 @@ def eval_ltd(self, results_id):
                 drag0 = interval['curve_drag'] + interval['gradient_drag'] + train_resistance(x0[1])
                 speed0 = x0[1]
                 acc = (traction_force(x0[1], p) - drag0)/(consist['mass']*1000)
-                speed = math.sqrt(acc * 2 * interval['length'] + speed0*speed0)
+                if (acc * 2 * interval['length'] + speed0*speed0)<0.1:
+                    speed = 0.1
+                else:
+                    speed = math.sqrt(acc * 2 * interval['length'] + speed0*speed0)
                 t = 2 * interval['length']/ (speed0 + speed) # time to travel distance with average speed
                 e = p * t
 
@@ -398,49 +420,62 @@ def eval_ltd(self, results_id):
             iter = False
             
         else:
-            # otherwise we need to check the battery energy constraint
-            energy_goal = min(stored_energy)-0.08*limits['max_battery_energy']
-            if energy_goal >= 0 and low_speed < 1.0:
-                # first time through low_speed should be "zero"
-                # if we have energy in the battery throughout we are good to go
+            # test to see if we can even maintian a minum speed at max power
+            if min(speeds[5:-5])<2.0:
                 iter = False
             else:
-                # we need to go slower
-                if low_speed < 1.0:
-                    # first time through
-                    # need to select a speed to bound the response
-                    high_speed = route_max_speed
-                    route_max_speed = 10 * ltd.MPH2MPS
-                    low_speed = route_max_speed  # should keep us from coming back here
-                    iter = True
-                else: 
-                    if energy_goal > 0:
-                        # we have energy at new speed - move lower bound
-                        low_speed = route_max_speed
-                    else:
-                        # we need to lower max speed
+                # otherwise we need to check the battery energy constraint
+                energy_goal = min(stored_energy)-0.08*limits['max_battery_energy']
+                if energy_goal >= 0 and low_speed < 1.0:
+                    # first time through low_speed should be "zero"
+                    # if we have energy in the battery throughout we are good to go
+                    iter = False
+                else:
+                    # we need to go slower
+                    if low_speed < 1.0:
+                        # first time through
+                        # need to select a speed to bound the response
                         high_speed = route_max_speed
-
-                    # need to determine the next speed setting to test
-                    # this should make sure it is positive to not have lp fail afterwards
-                    if energy_goal<50 and energy_goal>0:
-                        # we are done
-                        iter = False
-                    else:
-                        # the relationship between speed and min stored energy is not very linear - this may not perform very well
-                        # may want to consider simpler bisection method - this current method is the Secant method and may nto converge
-                        # in some instances
-                        # Bisection method
-                        route_max_speed = (low_speed+high_speed)/2.0
+                        route_max_speed = 10 * ltd.MPH2MPS
+                        low_speed = route_max_speed  # should keep us from coming back here
                         iter = True
-                    
-    if policy['type'] == 'score_lp':
-        results.status = 80
-        results.save()
-        results.result = policies.optimalLP(results.result)
+                    else: 
+                        if energy_goal > 0:
+                            # we have energy at new speed - move lower bound
+                            low_speed = route_max_speed
+                        else:
+                            # we need to lower max speed
+                            high_speed = route_max_speed
+
+                        # need to determine the next speed setting to test
+                        # this should make sure it is positive to not have lp fail afterwards
+                        if energy_goal<50 and energy_goal>0:
+                            # we are done
+                            iter = False
+                        else:
+                            # the relationship between speed and min stored energy is not very linear - this may not perform very well
+                            # may want to consider simpler bisection method - this current method is the Secant method and may nto converge
+                            # in some instances
+                            # Bisection method
+                            route_max_speed = (low_speed+high_speed)/2.0
+                            iter = True
+    
+    # take off the first and last 5 elements of the speed array
+    test_speeds = speeds[5:-5]
+    # if the minimum speed is less than 2 m/s call the simulation a failure
+    if min(test_speeds)<2.0:
+        results.result_code = 2
+    else:  
+        if policy['type'] == 'score_lp':
+            results.status = 80
+            results.save()
+            try:
+                results.result = policies.optimalLP(results.result)
+                results.result_code = 0
+            except OptimalLPException:
+                results.result_code = 2
 
     results.status=100
-    results.result_code = 0
     results.save()
 
     return

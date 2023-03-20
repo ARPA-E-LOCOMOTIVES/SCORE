@@ -10,6 +10,7 @@ import time
 from scipy.optimize import linprog
 from cvxopt import matrix, solvers
 solvers.options['show_progress'] = False
+solvers.options['maxiters'] = 100
 from .exceptions import OptimalLPException
 import locomotives.ltd as ltd      # want access to the constants defined here
 
@@ -197,7 +198,9 @@ def optimalLP(results):
         results['power']['regen'] = power_regen.tolist()
         
     else:
+        print(f"optimal lp failed: {res2['status']}")
         raise OptimalLPException()
+        
 
 
     return results

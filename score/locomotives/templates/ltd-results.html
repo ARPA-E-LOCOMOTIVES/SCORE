@@ -220,17 +220,11 @@
     const rapid = results.rapid;
     console.log(rapid);
     for(var row in speed_data){
-      if(rapid == 'true'){
-        combined.push({x: dist[row], power_limited_speed: 2.23694*speed_data[row], track_limited_speed: 2.23694*max_speed_data[row]});
-      } else {
-        combined.push({x: dist[row], power_limited_speed: 2.23694*speed_data[row], track_limited_speed: 2.23694*target_speed_data[row], max_speed: 2.23694*max_speed_data[row]});
-      }
+      combined.push({x: dist[row], power_limited_speed: 2.23694*speed_data[row], target_speed: 2.23694*target_speed_data[row], track_limited_speed: 2.23694*max_speed_data[row]});
     }
     var color_map = {};
     color_map['power_limited_speed'] = "green";
-    if(rapid != 'true'){
-      color_map['target_speed'] = "red";
-    }
+    color_map['target_speed'] = "red";
     color_map['track_limited_speed'] = "steelblue";
     var chart_speed_plot = new d3LinePlot(combined, 'chart_speed_details', color_map);
     chart_speed_plot.set_size(plot_width,180);

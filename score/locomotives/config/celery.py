@@ -23,6 +23,7 @@ app.conf.update(
     accept_content = ['json'],
     broker_url = settings.CELERY_BROKER_URL,
     result_backend = settings.CELERY_RESULT_BACKEND ,
+    task_time_limit = 300,
     imports = ('locomotives.tasks', ),
 )
 
