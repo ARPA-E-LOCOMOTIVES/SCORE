@@ -474,6 +474,8 @@ def eval_ltd(self, results_id):
                 results.result_code = 0
             except OptimalLPException:
                 results.result_code = 2
+        else:
+            results.result_code = 0
 
     results.status=100
     results.save()

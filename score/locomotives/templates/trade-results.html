@@ -179,7 +179,7 @@
 
   function addDesign(data) {
 
-    console.log(data);
+    // console.log(data);
 
     // need to add this the data model on the page when ready
     // check to see if dataModel is empty
@@ -224,8 +224,8 @@
     if ($('#scatter_plot_scale').val() == 'constant') {
       var size = Array(dataModel['constant'].length).fill(10);
     } else {
-      console.log($('#scatter_plot_scale').val());
-      console.log(dataModel[$('#scatter_plot_scale').val()])
+      // console.log($('#scatter_plot_scale').val());
+      // console.log(dataModel[$('#scatter_plot_scale').val()])
       var min = Math.min(...dataModel[$('#scatter_plot_scale').val()]);
       var max = Math.max(...dataModel[$('#scatter_plot_scale').val()]);
       var size = [];

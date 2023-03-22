@@ -272,7 +272,7 @@ def get_ltd_summary(request, result_id):
         data['battery_power_kw'] = consist_info['battery_power_kw']
         data['fuelcell_power_kw'] = consist_info['fuelcell_power_kw']
         data['tonmileperhour'] = consist_info['trailing_tons']*(output['distances'][-1]/MI2M)/data['duration_hrs']
-        data['actual_max_speed_mph'] = 2.23694*max(output['max'])  
+        data['actual_max_speed_mph'] = max(output['max'])/MPH2MPS  
         
         total_diesel_energy = sum(output['energy']['diesel'])
         total_battery_energy = sum(output['energy']['battery'])
