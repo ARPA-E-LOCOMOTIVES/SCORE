@@ -178,16 +178,15 @@
   }
 
   function addDesign(data) {
+
+    console.log(data);
+
     // need to add this the data model on the page when ready
     // check to see if dataModel is empty
     if (Object.keys(dataModel).length == 0) {
       // nothing in it yet so add keys and initial data array
       $.each(data, function(key, value) {
         // don't want status in list, but do want a constant
-        if (key=='status') {
-          key='constant';
-          value = 1;
-        }
         dataModel[key] = [value];
         var optionX = new Option(key, key);
         xaxis.append(optionX);

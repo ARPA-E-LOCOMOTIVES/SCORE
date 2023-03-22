@@ -21,7 +21,7 @@ RUN mkdir $APP_HOME/staticfiles
 
 COPY ./requirements.txt .
 # remove this line before committing
-# RUN pip config set global.index-url https://artifactory.arl.psu.edu/artifactory/api/pypi/pypi/simple
+RUN pip config set global.index-url https://artifactory.arl.psu.edu/artifactory/api/pypi/pypi/simple
 RUN pip install -r requirements.txt
 
 # copy entrypoint.sh

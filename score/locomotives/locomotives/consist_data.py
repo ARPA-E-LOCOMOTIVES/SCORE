@@ -21,17 +21,23 @@ def get_consist_data(consist):
     total_length = 0
     total_power = 0
     max_battery_energy = 0
+    total_diesel_power = 0
+    total_battery_power = 0
+    total_fuelcell_power = 0
 
     for i, car in enumerate(consist_cars):
         total_length += car.car.length
         if car.car.type == 'C':
             total_power += car.car.fuelcelllocomotive.max_power
+            total_fuelcell_power += car.car.fuelcelllocomotive.max_power
             total_mass += car.car.weight
         if car.car.type == 'D':
             total_power += car.car.diesellocomotive.max_power
+            total_diesel_power += car.car.diesellocomotive.max_power
             total_mass += car.car.weight
         if car.car.type == 'E':
             total_power += car.car.electriclocomotive.max_power_out
+            total_battery_power += car.car.electriclocomotive.max_power_out
             max_battery_energy += car.car.electriclocomotive.max_usable_energy
             total_mass += car.car.weight
         if car.car.type == 'F':
@@ -51,4 +57,7 @@ def get_consist_data(consist):
     consist_data["power_to_weight"] = 0
     if total_mass > 0: # in case a user enters a bad consist
         consist_data["power_to_weight"] = round(KW2HP*total_power/(TONNE2TON*total_freight_mass),2)
+    consist_data["diesel_power_hp"] = int(KW2HP*total_diesel_power)
+    consist_data["battery_power_kw"] = total_battery_power
+    consist_data["fuelcell_power_kw"] = total_fuelcell_power
     return consist_data
