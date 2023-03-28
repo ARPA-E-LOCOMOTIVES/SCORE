@@ -224,6 +224,9 @@ $('#submit_button').click(function() {
       } else if (response.state==1) {
         r_state = 'running'
         d_button = '<button type="button" class="btn btn-secondary btn-small" disabled>View</button>'
+      } else if (response.state==2) {
+        r_state = 'failure'
+        d_button = `<a href="/ltd_details/${response.result_id}" target="_blank" role="button" class="btn btn-primary btn-small">View</a>`
       }
       if (response.rapid) {
         rapid = 'yes'
@@ -253,7 +256,7 @@ $('#submit_button').click(function() {
       }
 
       // task is finished
-      if (response.state == 0) {return false}
+      if (response.state == 0||response.state ==2) {return false}
       // rerun every 2 seconds
       setTimeout(function() {
         updateState(response.result_id)

@@ -238,10 +238,10 @@ def get_ltd_summary(request, result_id):
     # print('checking result: ' + result_id)
     result = LTDResults.objects.get(id = result_id)
     data = {}
-    data['status'] = result.result_code
-    if result.result_code == 0:
+    if result.result_code in [0, 2]:
         # we have a completed ltd analysis get the stored out put from the analysis
         output = result.result
+        data['constant'] = 1
         data['duration_hrs'] = output['duration']/3600      # convert from seconds to hrs
         perfs = output['perfs']
         consist_info = get_consist_data(result.consist)
@@ -268,4 +268,23 @@ def get_ltd_summary(request, result_id):
         data['trailing_weight_tons'] =  consist_info['trailing_tons']
         data['max_power_hp'] = consist_info['power_hp']
         data['max_battery_energy_kw-hr'] = consist_info['battery_energy']
+        data['diesel_power_hp'] = consist_info['diesel_power_hp']
+        data['battery_power_kw'] = consist_info['battery_power_kw']
+        data['fuelcell_power_kw'] = consist_info['fuelcell_power_kw']
+        data['tonmileperhour'] = consist_info['trailing_tons']*(output['distances'][-1]/MI2M)/data['duration_hrs']
+        data['actual_max_speed_mph'] = max(output['max'])/MPH2MPS  
+        
+        total_diesel_energy = sum(output['energy']['diesel'])
+        total_battery_energy = sum(output['energy']['battery'])
+        total_regen_energy = sum(output['energy']['regen'])
+        total_fuelcell_energy = sum(output['energy']['fuelcell'])
+        total_energy = total_diesel_energy + total_fuelcell_energy + total_battery_energy + total_regen_energy
+
+        data['diesel_proportion'] = total_diesel_energy/total_energy
+        data['battery_proportion'] = total_battery_energy/total_energy
+        data['regen_proportion'] = total_regen_energy/total_energy
+        data['fuelcell_proportion'] = total_fuelcell_energy/total_energy
+
+        data['status'] = result.result_code
+
     return JsonResponse(data, status=200)

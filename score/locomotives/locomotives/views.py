@@ -36,6 +36,11 @@ from locomotives.consist_data import get_consist_data
 
 import csv
 
+KW2HP = 1.34102     # convert kw to hp
+TONNE2TON = 1.10231 # convert tonne (1000 kg) to ton (2000 lbs)
+MPH2MPS = 0.44704   # convert MPH to m/s
+MI2M = 1609.34      # convert mile to meter
+
 # Create your views here.
 @login_required
 def home(request):
@@ -1144,6 +1149,8 @@ def exporttradespace(request, session_id):
     titles = ['duration_hrs',
         'diesel_consumed_kg',
         'hydrogen_consumed_kg',
+        'energy_cost',
+        'cost_per_ton_mile',
         'max_speed',
         'route',
         'consist',
@@ -1156,6 +1163,11 @@ def exporttradespace(request, session_id):
         'trailing_weight_tons',
         'max_power_hp',
         'max_battery_energy_kw',
+        'diesel_power_hp',
+        'battery_power_kw',
+        'fuelcell_power_kw',
+        'tonmilerperhour',
+        'actual_max_speed',
         'result_code',
         'ghg_co_kg',
         'ghg_hc_kg',
@@ -1184,7 +1196,9 @@ def exporttradespace(request, session_id):
             values = [output['duration']/3600,
                 perfs['fuel_diesel'][-1],
                 perfs['fuel_hydrogen'][-1],
-                result.policy.max_speed,
+                perfs['fuel_cost'],
+                perfs['fuel_cost']/(consist_info['freight_tons']*output['distances'][-1]/MI2M),
+                result.policy.max_speed/MPH2MPS,
                 result.route.name,
                 result.consist.name,
                 s,
@@ -1196,6 +1210,11 @@ def exporttradespace(request, session_id):
                 consist_info['trailing_tons'],
                 consist_info['power_hp'],
                 consist_info['battery_energy'],
+                consist_info['diesel_power_hp'],
+                consist_info['battery_power_kw'],
+                consist_info['fuelcell_power_kw'],
+                consist_info['trailing_tons']*(output['distances'][-1]/MI2M)/(output['duration']/3600),
+                max(output['max'])/MPH2MPS,
                 result.result_code,
                 round(perfs['co'][-1]/1000,1),
                 round(perfs['hc'][-1]/1000,1),
