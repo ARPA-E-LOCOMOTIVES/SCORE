@@ -61,7 +61,7 @@ urlpatterns = [
     path('api/consists', api_views.ConsistList.as_view()),
     path('api/ltd-status/<str:result_id>/', api_views.ltd_status, name='ltd_status'),
     path('api/get_ltd_result/<str:result_id>/', api_views.get_ltd_result, name='get_ltd_result'),
-    path('api/get_consist_info/<str:pk>/', api_views.get_consist_info, name="get_consist_info"),
+    path('api/get_consist_info/<str:pk>/', api_views.get_consist_data, name="get_consist_info"),
     path('api/get_elevation/<str:pk>/', api_views.get_elevation, name='get_elevation'),
     path('api/get_route_list/', api_views.get_route_list, name='get_route_list'),
     path('api/get_route_data/<str:pk>/', api_views.get_route_data, name='get_route_data'),

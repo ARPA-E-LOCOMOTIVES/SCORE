@@ -9,7 +9,7 @@
 from locomotives.models import Consist, Route, Policy, LTDResults, ConsistCar, Segment, Session
 from locomotives.serializers import ConsistSerializer, Route2Serializer
 from locomotives.ltd import MPH2MPS, get_segments
-from locomotives.views import get_visible
+from locomotives.views import get_visible, get_consist_info
 from locomotives.consist_data import get_consist_data
 
 from rest_framework import generics
@@ -162,9 +162,9 @@ def get_ltd_result(request, result_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_consist_info(request, pk):
-    consist = Consist.objects.get(id = pk)
-    consist_info = get_consist_data(consist)
+def get_consist_data(request, pk):
+    # consist = Consist.objects.get(id = pk)
+    consist, consist_info, consist_common_info, consist_locomotive_types = get_consist_info(pk)
     return JsonResponse(consist_info, status=200)
 
 @api_view(['GET'])
