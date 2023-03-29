@@ -57,7 +57,7 @@ def get_consist_data(consist):
     consist_data["power_to_weight"] = 0
     if total_mass > 0: # in case a user enters a bad consist
         consist_data["power_to_weight"] = round(KW2HP*total_power/(TONNE2TON*total_freight_mass),2)
-    consist_data["diesel_power_hp"] = int(KW2HP*total_diesel_power)
+    consist_data["diesel_power_kw"] = total_diesel_power
     consist_data["battery_power_kw"] = total_battery_power
     consist_data["fuelcell_power_kw"] = total_fuelcell_power
     return consist_data

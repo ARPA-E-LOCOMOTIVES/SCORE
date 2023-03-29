@@ -22,6 +22,7 @@ from django.http import HttpResponse, JsonResponse
 
 from .tasks import eval_ltd
 from celery.result import AsyncResult
+from .ltd import get_elevations
 
 KW2HP = 1.34102     # convert kw to hp
 TONNE2TON = 1.10231 # convert tonne (1000 kg) to ton (2000 lbs)
@@ -170,13 +171,14 @@ def get_consist_data(request, pk):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_elevation(request, pk):
-    route = Route.objects.get(id=pk)
-    segments = Segment.objects.filter(route=route).order_by('segment_order').all()
-    route_dist_seg = 0
-    elevation_data = []
-    for i, seg in enumerate(segments):
-        route_dist_seg += seg.arc_distance
-        elevation_data.append([route_dist_seg, seg.locations.all()[1].smooth_elev_m])
+    # route = Route.objects.get(id=pk)
+    # segments = Segment.objects.filter(route=route).order_by('segment_order').all()
+    # route_dist_seg = 0
+    # elevation_data = []
+    # for i, seg in enumerate(segments):
+    #     route_dist_seg += seg.arc_distance
+    #    elevation_data.append([route_dist_seg, seg.locations.all()[1].smooth_elev_m])
+    elevation_data, elevation_gain, elevation_loss = get_elevations(pk)
     elevation_lines = { 'data': elevation_data}
     return JsonResponse(elevation_lines, status=200)
 

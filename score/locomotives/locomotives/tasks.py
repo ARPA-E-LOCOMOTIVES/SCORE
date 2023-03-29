@@ -420,7 +420,7 @@ def eval_ltd(self, results_id):
             iter = False
             
         else:
-            # test to see if we can even maintian a minum speed at max power
+            # test to see if we can even maintain a minum speed at max power
             if min(speeds[5:-5])<2.0:
                 iter = False
             else:
@@ -444,8 +444,15 @@ def eval_ltd(self, results_id):
                             # we have energy at new speed - move lower bound
                             low_speed = route_max_speed
                         else:
-                            # we need to lower max speed
-                            high_speed = route_max_speed
+                            # need a check to see if the route_max_speed is already at low
+                            # speed and we still can't meet criterion for iteration
+                            if route_max_speed < 11 * ltd.MPH2MPS:
+                                # we can't do it - stop iteration
+                                iter = False
+                            else:
+                                # we need to lower max speed
+                                high_speed = route_max_speed
+
 
                         # need to determine the next speed setting to test
                         # this should make sure it is positive to not have lp fail afterwards
@@ -463,7 +470,8 @@ def eval_ltd(self, results_id):
     # take off the first and last 5 elements of the speed array
     test_speeds = speeds[5:-5]
     # if the minimum speed is less than 2 m/s call the simulation a failure
-    if min(test_speeds)<2.0:
+    # or if the route max speed is too low (probably failed above iteration)
+    if min(test_speeds)<2.0 or route_max_speed < 11 * ltd.MPH2MPS:
         results.result_code = 2
     else:  
         if policy['type'] == 'score_lp':

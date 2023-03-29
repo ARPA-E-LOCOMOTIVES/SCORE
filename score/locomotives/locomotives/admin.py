@@ -9,7 +9,7 @@
 from django.contrib import admin
 from functools import partial
 from .models import CarType, FreightCar, DieselLocomotive, FuelCellLocomotive, ElectricLocomotive, PowerToWheels, ConsistCar, Consist, Route, UserRequest
-from .models import Policy, Segment, Tier, LocomotiveModel, Emission, LAR, Fuel
+from .models import Policy, Segment, Tier, LocomotiveModel, Emission, LAR, Fuel, Session, LTDResults
 
 class PowerInline(admin.TabularInline):
     model = PowerToWheels
@@ -143,3 +143,13 @@ class FuelAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
 admin.site.register(Fuel, FuelAdmin)
+
+class SessionAdmin(admin.ModelAdmin):
+    list_display = ('short_desc', 'date',)
+
+admin.site.register(Session, SessionAdmin)
+
+class LTDResultsAdmin(admin.ModelAdmin):
+    list_display = ('session', 'analysis_date',)
+
+admin.site.register(LTDResults, LTDResultsAdmin)
