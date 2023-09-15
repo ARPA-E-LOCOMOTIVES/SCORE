@@ -116,8 +116,12 @@ def eval_ltd(self, results_id):
 
     route_max_speed = results.policy.max_speed
     low_speed = 0
+    num_iters = 0
 
-    while iter:
+    # need to start iterations here to handle changes in route_max_speed
+    # stop iterating after 10 loops
+    while iter and num_iters<10:
+        num_iters=num_iters+1
         # estabilish the intervals for integration
         intervals = ltd.create_intervals(consist, route)
         ni = len(intervals)
@@ -477,11 +481,14 @@ def eval_ltd(self, results_id):
         if policy['type'] == 'score_lp':
             results.status = 80
             results.save()
-            try:
-                results.result = policies.optimalLP(results.result)
-                results.result_code = 0
-            except OptimalLPException:
-                results.result_code = 2
+            if num_iters<10:
+                try:
+                    results.result = policies.optimalLP(results.result)
+                    results.result_code = 0
+                except OptimalLPException:
+                    results.result_code = 2
+            else:
+                results.result_code = 3
         else:
             results.result_code = 0
 
