@@ -103,6 +103,11 @@
       const duration_hr = 0.000277778*results.data.times[ni];
       const trailing_tons = consist_info.trailing_tons;
       const tonmileperhour = trailing_tons*distance_mi/duration_hr;
+      const diesel_energy = results.data.energy.diesel[ni];
+      const fuelcell_energy = results.data.energy.fuelcell[ni];
+      const battery_energy = results.data.energy.battery[ni];
+      const regen_energy = results.data.energy.regen[ni];
+      const energy_consumed = diesel_energy + fuelcell_energy + battery_energy - regen_energy;
       const total_energy = (results.data.energy.diesel[ni]+results.data.energy.battery[ni])*1.3404825737
       const avg_speed = 2.23694*(results.data.distances[ni]/results.data.times[ni])
       const max_target_speed = 2.23694*results.data.max.reduce(function(a, b) {
@@ -130,7 +135,8 @@
             <h4><b>Total NO Emissions (kg)</b> : ${ (results.data.perfs.no[ni]/1000).toFixed(1) } </h4><br>
             <h4><b>Total PM Emissions (kg)</b> : ${ (results.data.perfs.pm[ni]/1000).toFixed(1) } </h4><br>
             <h4><b>Distance Travelled (mi)</b> : ${ distance_mi.toFixed(1) } </h4><br>
-            <h4><b>Total Energy (hp hr)</b> : ${ total_energy.toFixed(0) } </h4><br>
+            <h4><b>Total Energy Consumed (kw hr)</b> : ${ energy_consumed.toFixed(0) } </h4><br>
+            <h4><b>Total Energy Regenerated (kw hr)</b> : ${ regen_energy.toFixed(0) } </h4><br>
             <h4><b>Average Speed (mph)</b> : ${ avg_speed.toFixed(1) } </h4><br>
           </th>
         </tr>

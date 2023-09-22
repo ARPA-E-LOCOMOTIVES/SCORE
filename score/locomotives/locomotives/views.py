@@ -33,6 +33,7 @@ from django.contrib.auth.models import User, Group
 
 from itertools import permutations
 from locomotives.consist_data import get_consist_data
+from locomotives.ltd import get_elevations
 
 import csv
 
@@ -1147,6 +1148,9 @@ def tradespace(request, session_id):
 def exporttradespace(request, session_id):
 
     titles = ['duration_hrs',
+        'distance_miles',
+        'elevation_gain_m',
+        'elevation_loss_m',
         'diesel_consumed_kg',
         'hydrogen_consumed_kg',
         'energy_cost',
@@ -1159,13 +1163,19 @@ def exporttradespace(request, session_id):
         'rapid',
         'status',
         'total_weight_tons',
+        'freight_weight_tons',
         'number_cars',
         'trailing_weight_tons',
         'max_power_hp',
-        'max_battery_energy_kw',
-        'diesel_power_hp',
+        'max_battery_energy_kw_hr',
+        'diesel_power_kw',
         'battery_power_kw',
         'fuelcell_power_kw',
+        'total_energy_kw_hr',
+        'diesel_energy_kw_hr',
+        'fuelcell_energy_kw_hr',
+        'battery_energy_kw_hr',
+        'regen_energy_kw_hr',
         'tonmilerperhour',
         'actual_max_speed',
         'result_code',
@@ -1185,6 +1195,7 @@ def exporttradespace(request, session_id):
             # we have a completed ltd analysis get the stored out put from the analysis
             output = result.result
             perfs = output['perfs']
+            energy = output['energy']
             s = "automatic"
             if result.policy.type == 'user_fixed':
                 str = ""
@@ -1193,7 +1204,11 @@ def exporttradespace(request, session_id):
                         str += p + ", "
                 s = str[:-2]
             consist_info = get_consist_data(result.consist)
+            elevation_data, elevation_gain, elevation_loss = get_elevations(result.route.id)
             values = [output['duration']/3600,
+                elevation_data[-1][0]/MI2M,
+                elevation_gain,
+                elevation_loss,
                 perfs['fuel_diesel'][-1],
                 perfs['fuel_hydrogen'][-1],
                 perfs['fuel_cost'],
@@ -1206,13 +1221,19 @@ def exporttradespace(request, session_id):
                 result.rapid,
                 result.status,
                 consist_info['weight_tons'],
+                consist_info['freight_tons'],
                 consist_info['number_cars'],
                 consist_info['trailing_tons'],
                 consist_info['power_hp'],
                 consist_info['battery_energy'],
-                consist_info['diesel_power_hp'],
+                consist_info['diesel_power_kw'],
                 consist_info['battery_power_kw'],
                 consist_info['fuelcell_power_kw'],
+                energy['diesel'][-1]+energy['battery'][-1]+energy['fuelcell'][-1],
+                energy['diesel'][-1],
+                energy['fuelcell'][-1],
+                energy['battery'][-1],
+                energy['regen'][-1],
                 consist_info['trailing_tons']*(output['distances'][-1]/MI2M)/(output['duration']/3600),
                 max(output['max'])/MPH2MPS,
                 result.result_code,
