@@ -12,6 +12,7 @@ RUN conda init && \
     conda install \
         gdal \
         geopandas \
+        folium \
         osmnx \
         pip \
         python=3.11 && \

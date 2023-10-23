@@ -70,6 +70,16 @@ class SpeedRestriction(models.Model):
     max_speed = models.FloatField(null=True, blank=True)
     stop_duration = models.FloatField(null=True, blank=True)
 
+class Railroad(models.Model):
+    short = models.CharField(max_length=8)
+    name = models.CharField(max_length=50)
+
+class Line(models.Model):
+    fra_id = models.IntegerField()    
+    from_node = models.IntegerField()
+    to_node = models.IntegerField()
+    rights = models.ManyToManyField(Railroad)
+
 class CarType(models.Model):
     code = models.CharField(max_length=1)
     description = models.CharField(max_length=100)
