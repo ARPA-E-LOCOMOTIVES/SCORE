@@ -12,6 +12,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.urls import reverse
 from django.db.models.signals import post_init
 from django.contrib.auth.models import User, Group
+from django.core.serializers.json import DjangoJSONEncoder
 from pytz import timezone
 import datetime
 
@@ -71,14 +72,33 @@ class SpeedRestriction(models.Model):
     stop_duration = models.FloatField(null=True, blank=True)
 
 class Railroad(models.Model):
-    short = models.CharField(max_length=8)
-    name = models.CharField(max_length=50)
+    code = models.CharField(max_length=4)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.code
 
 class Line(models.Model):
     fra_id = models.IntegerField()    
     from_node = models.IntegerField()
     to_node = models.IntegerField()
     rights = models.ManyToManyField(Railroad)
+    segment = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    geometry = models.JSONField(encoder=DjangoJSONEncoder,  null=True, blank=True)
+
+    def __str__(self):
+        return self.fra_id
+
+class Yard(models.Model):
+    code = models.CharField(max_length=4)
+    name = models.CharField(max_length=100)
+    city = models.CharField(max_length=50)
+    state = models.CharField(max_length=2)
+    origin = models.ForeignKey(Line, on_delete=models.CASCADE, null=True, blank=True)
+    owner = models.ForeignKey(Railroad, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 class CarType(models.Model):
     code = models.CharField(max_length=1)
