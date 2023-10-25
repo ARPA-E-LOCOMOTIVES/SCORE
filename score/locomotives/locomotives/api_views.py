@@ -6,8 +6,8 @@
 # FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 
 
-from locomotives.models import Consist, Route, Policy, LTDResults, ConsistCar, Segment, Session
-from locomotives.serializers import ConsistSerializer, Route2Serializer
+from locomotives.models import Consist, Route, Policy, LTDResults, ConsistCar, Segment, Session, Line
+from locomotives.serializers import ConsistSerializer, Route2Serializer, LineSerializer
 from locomotives.ltd import MPH2MPS, get_segments
 from locomotives.views import get_visible, get_consist_info
 from locomotives.consist_data import get_consist_data
@@ -48,6 +48,11 @@ class RouteDetail(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Route.objects.all()
     serializer_class = Route2Serializer
+
+class LineList(generics.ListCreateAPIView):
+    # permission_classes = [IsAuthenticated]
+    queryset = Line.objects.all()
+    serializer_class = LineSerializer
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

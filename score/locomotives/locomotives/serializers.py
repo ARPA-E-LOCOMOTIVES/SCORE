@@ -6,7 +6,9 @@
 # FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 
 from rest_framework import serializers
-from .models import Route, RouteSchedule, Location, Locality, Segment, SpeedRestriction, Consist, ConsistCar, Car, FreightCar, DieselLocomotive, ElectricLocomotive, FuelCellLocomotive, PowerToWheels, ConsistRouteEvaluation, PerformanceWithEmissions
+from .models import Route, RouteSchedule, Location, Locality, Segment, SpeedRestriction, Consist, ConsistCar, Car, FreightCar
+from .models import DieselLocomotive, ElectricLocomotive, FuelCellLocomotive, PowerToWheels, ConsistRouteEvaluation, PerformanceWithEmissions
+from .models import Line
 
 class RouteSerializer(serializers.ModelSerializer):
     url = serializers.CharField(source='get_absolute_url', read_only=True)
@@ -158,3 +160,9 @@ class PerformanceWithEmissionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PerformanceWithEmissions
         fields = ['id', 'start_distance', 'start_time', 'interval_length', 'interval_duration', 'ending_speed', 'power', 'energy_cost', 'fuel_consumed', 'ghg_hc_emissions', 'ghg_co_emissions', 'ghg_no_emissions', 'ghg_pm_emissions', 'consist_route_evaluation', 'consist_route_evaluation_id', 'segment', 'segment_id']
+
+class LineSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Line
+        fields = '__all__'

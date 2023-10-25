@@ -94,11 +94,25 @@ class Yard(models.Model):
     name = models.CharField(max_length=100)
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=2)
-    origin = models.ForeignKey(Line, on_delete=models.CASCADE, null=True, blank=True)
+    location = models.ForeignKey(Line, on_delete=models.CASCADE, null=True, blank=True)
     owner = models.ForeignKey(Railroad, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return self.name
+    
+class Route2(models.Model):
+    origin = models.ForeignKey(Yard, on_delete=models.CASCADE, related_name='origin')
+    destination = models.ForeignKey(Yard, on_delete=models.CASCADE, related_name='destinaton')
+    owner = models.ForeignKey(Railroad, on_delete=models.CASCADE, null=True, blank=True)
+    line = models.ManyToManyField(Line, through='RouteLine')
+
+    def __str__(self):
+        return self.origin.name + ' - ' + self.destination.name
+    
+class RouteLine(models.Model):
+    line = models.ForeignKey(Line, on_delete=models.CASCADE)
+    route = models.ForeignKey(Route2, on_delete=models.CASCADE)
+    order = models.IntegerField()
 
 class CarType(models.Model):
     code = models.CharField(max_length=1)

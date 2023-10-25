@@ -160,6 +160,6 @@ class RailroadAdmin(admin.ModelAdmin):
 admin.site.register(Railroad, RailroadAdmin)
 
 class YardAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name', 'city', 'state', 'origin', 'owner',)
+    list_display = ('code', 'name', 'city', 'state', 'location', 'owner',)
 
 admin.site.register(Yard, YardAdmin)
