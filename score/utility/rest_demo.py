@@ -28,17 +28,12 @@ URL = "https://www.mmo-scorelocomotives.org"
 URL1 = URL+"/api-token-auth/"
 URL2 = URL + "/api/get_route_list/"
 URL3 = URL + "/api/get_route_data/"
-print(os.getcwd())
 
-# this file is currently in the utility directory
-# there is a cert file in the root (back one directory)
-
-cert = "../arl_custom_cert_bundle.pem"
 
 # %% [markdown]
 # Get a authorization token
 payload = {'username':'locomotives', 'password':'locomotives'}
-t = requests.post(URL1, data=payload, verify=cert)
+t = requests.post(URL1, data=payload )
 token = t.json().get('token')
 print(token)
 
