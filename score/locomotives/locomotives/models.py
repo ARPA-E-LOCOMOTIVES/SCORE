@@ -82,9 +82,11 @@ class Line(models.Model):
     fra_id = models.IntegerField()    
     from_node = models.IntegerField()
     to_node = models.IntegerField()
-    rights = models.ManyToManyField(Railroad)
-    segment = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
-    geometry = models.JSONField(encoder=DjangoJSONEncoder,  null=True, blank=True)
+    rights = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    xyz = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    lnglat = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    curvature = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    gradient = models.JSONField(encoder=DjangoJSONEncoder,  null=True, blank=True)
 
     def __str__(self):
         return self.fra_id

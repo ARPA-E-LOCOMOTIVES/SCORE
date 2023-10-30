@@ -62,7 +62,15 @@ services:
       - db
       - redis
       - web
-
+  jupyter:
+      build:
+        context: ./utility/narn
+        dockerfile: Dockerfile
+      ports:
+        - "8888:8888"
+      restart: always
+      volumes:
+        - ./utility/narn/notebooks:/home/jovyan/notebooks
   
 volumes:
   pg_data:

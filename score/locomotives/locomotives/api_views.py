@@ -6,8 +6,8 @@
 # FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 
 
-from locomotives.models import Consist, Route, Policy, LTDResults, ConsistCar, Segment, Session, Line
-from locomotives.serializers import ConsistSerializer, Route2Serializer, LineSerializer
+from locomotives.models import Consist, Route, Policy, LTDResults, ConsistCar, Segment, Session, Line, Railroad
+from locomotives.serializers import ConsistSerializer, Route2Serializer, LineSerializer, RailroadSerializer
 from locomotives.ltd import MPH2MPS, get_segments
 from locomotives.views import get_visible, get_consist_info
 from locomotives.consist_data import get_consist_data
@@ -23,6 +23,8 @@ from django.http import HttpResponse, JsonResponse
 from .tasks import eval_ltd
 from celery.result import AsyncResult
 from .ltd import get_elevations
+
+import json
 
 KW2HP = 1.34102     # convert kw to hp
 TONNE2TON = 1.10231 # convert tonne (1000 kg) to ton (2000 lbs)
@@ -53,6 +55,46 @@ class LineList(generics.ListCreateAPIView):
     # permission_classes = [IsAuthenticated]
     queryset = Line.objects.all()
     serializer_class = LineSerializer
+
+class RailroadList(generics.ListAPIView):
+    queryset = Railroad.objects.all()
+    serializer_class = RailroadSerializer
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def add_line(request):
+    data = request.data
+    fra_id = int(data.get('fra_id'))
+    from_node = int(data.get('from_node'))
+    to_node = int(data.get('to_node'))
+    # convert the strings in the array to integers
+    rights = [int(i) for i in data.getlist('rights')]
+    # this is a single dimension array of strings that represent floats
+    # we will convert them to floats, but maintain the single dimension
+    xyz = [float(f) for f in data.getlist('xyz')]
+    lnglat = [float(f) for f in data.getlist('lnglat')]
+    gradient = [float(f) for f in data.getlist('gradient')]
+    curvature = [float(f) for f in data.getlist('curvature')]
+
+    try:
+        obj = Line.objects.get(fra_id=fra_id)
+        obj.from_node=from_node
+        obj.to_node=to_node
+        obj.rights=rights
+        obj.xyz=xyz
+        obj.lnglat=lnglat
+        obj.gradient=gradient
+        obj.curvature=curvature
+        obj.save()
+        print('udpated: ', obj.fra_id )
+    except Line.DoesNotExist:
+        obj = Line(fra_id=fra_id, from_node=from_node, to_node=to_node, rights=rights, xyz=xyz, lnglat=lnglat, gradient=gradient, curvature=curvature)
+        obj.save()
+        print('added: ', obj.fra_id)
+
+    return JsonResponse({'results':1}, status=200)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
