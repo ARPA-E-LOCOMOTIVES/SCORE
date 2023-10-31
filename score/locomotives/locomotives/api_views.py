@@ -95,6 +95,20 @@ def add_line(request):
 
     return JsonResponse({'results':1}, status=200)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def get_line(request, fra_id):
+    try:
+        obj = Line.objects.get(fra_id=fra_id)
+        status = 200
+        results = LineSerializer(obj).data
+    except Line.DoesNotExist:
+        status = 204
+        results = {}
+    
+    return JsonResponse({'results': results}, status=status)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

@@ -60,6 +60,7 @@ urlpatterns = [
     path('api/routes/', api_views.RouteList.as_view()),
     path('api/consists', api_views.ConsistList.as_view()),
     path('api/line/add/', api_views.add_line, name='add_line'),
+    path('api/line/<str:fra_id>', api_views.get_line, name='get_line'),
     path('api/railroad/', api_views.RailroadList.as_view()),
     path('api/ltd-status/<str:result_id>/', api_views.ltd_status, name='ltd_status'),
     path('api/get_ltd_result/<str:result_id>/', api_views.get_ltd_result, name='get_ltd_result'),
