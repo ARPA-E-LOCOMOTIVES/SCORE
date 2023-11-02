@@ -109,6 +109,14 @@ def get_line(request, fra_id):
     
     return JsonResponse({'results': results}, status=status)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def add_route(request):
+    data = request.data
+
+    return JsonResponse({'results': 1}, status=200)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
