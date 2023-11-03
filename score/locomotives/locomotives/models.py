@@ -89,14 +89,14 @@ class Line(models.Model):
     gradient = models.JSONField(encoder=DjangoJSONEncoder,  null=True, blank=True)
 
     def __str__(self):
-        return self.fra_id
+        return str(self.fra_id)
 
 class Yard(models.Model):
     code = models.CharField(max_length=4)
     name = models.CharField(max_length=100)
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=2)
-    location = models.ForeignKey(Line, on_delete=models.CASCADE, null=True, blank=True)
+    location = models.IntegerField(null=True, blank=True)
     owner = models.ForeignKey(Railroad, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):

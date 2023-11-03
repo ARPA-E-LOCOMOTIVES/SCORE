@@ -8,7 +8,7 @@
 from rest_framework import serializers
 from .models import Route, RouteSchedule, Location, Locality, Segment, SpeedRestriction, Consist, ConsistCar, Car, FreightCar
 from .models import DieselLocomotive, ElectricLocomotive, FuelCellLocomotive, PowerToWheels, ConsistRouteEvaluation, PerformanceWithEmissions
-from .models import Line, Railroad
+from .models import Line, Railroad, Yard
 
 class RouteSerializer(serializers.ModelSerializer):
     url = serializers.CharField(source='get_absolute_url', read_only=True)
@@ -171,4 +171,10 @@ class RailroadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Railroad
+        fields = '__all__'
+
+class YardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Yard
         fields = '__all__'

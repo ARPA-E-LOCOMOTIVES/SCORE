@@ -6,8 +6,8 @@
 # FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 
 
-from locomotives.models import Consist, Route, Policy, LTDResults, ConsistCar, Segment, Session, Line, Railroad
-from locomotives.serializers import ConsistSerializer, Route2Serializer, LineSerializer, RailroadSerializer
+from locomotives.models import Consist, Route, Policy, LTDResults, ConsistCar, Segment, Session, Line, Railroad, Yard, Route2
+from locomotives.serializers import ConsistSerializer, Route2Serializer, LineSerializer, RailroadSerializer, YardSerializer
 from locomotives.ltd import MPH2MPS, get_segments
 from locomotives.views import get_visible, get_consist_info
 from locomotives.consist_data import get_consist_data
@@ -109,13 +109,102 @@ def get_line(request, fra_id):
     
     return JsonResponse({'results': results}, status=status)
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def delete_line(request, fra_id):
+    try:
+        obj = Line.objects.get(fra_id=fra_id)
+        status = 200
+        obj.delete()
+    except:
+        status = 404
+    
+    return JsonResponse({}, status=status)
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @renderer_classes([JSONRenderer])
 def add_route(request):
     data = request.data
+    origin = Yard.objects.get(pk=data.get('origin'))
+    destination = Yard.objects.get(pk=data.get('destination'))  
+    owner = Railroad.objects.get(pk=data.get('owner'))
+    path = [int(i) for i in data.getlist('path')]
+
+    try:
+        obj = Route2.objects.get(origin=origin, destination=destination)
+        obj.owner=owner
+        obj.path=path
+        obj.save()
+        print('updated route')
+    except Route2.DoesNotExist:
+        obj = Route2(origin=origin, destination=destination, owner=owner, path=path)
+        obj.save()
+        print('added route')
+
+    return JsonResponse({'results': obj.id}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def get_route_detail(request, pk):
+    route = Route2.objects.get(pk=pk)
+    # we take the path and get line segments in order
+    # to do this we select a line segment that has two consecutive points as to and fr
+    path = route.path
+    for i in range(len(path)-1):
+        nodes = [path[i],path[i+1]]
+        print(nodes)
+        try: 
+            line = Line.objects.get(from_node__in=nodes, to_node__in=nodes)
+            if line.from_node==nodes[0]:
+                print('forward', line.fra_id)
+            else:
+                print('reverse', line.fra_id)
+            print(line)
+        except Line.DoesNotExist:
+            print('oops')
+    
+
+    return JsonResponse({'results': route.pk}, status=200)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def add_yard(request):
+    data = request.data
+
+    print(data)
 
     return JsonResponse({'results': 1}, status=200)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def all_yard(request):
+    yard_list = Yard.objects.all()
+    results=[]
+    for yard in yard_list:
+        results.append({'id': yard.pk, 'name': yard.name})
+
+    return JsonResponse({'results': results}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def get_yard(request, yard_id):
+    try:
+        obj = Yard.objects.get(pk=yard_id)
+        status = 200
+        results = YardSerializer(obj).data
+    except Yard.DoesNotExist:
+        status = 204
+        results = {}
+    
+    return JsonResponse({'results': results}, status=status)
 
 
 @api_view(['POST'])
