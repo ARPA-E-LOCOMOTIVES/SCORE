@@ -34,7 +34,7 @@ The web server used in this implementation is for development use only. It is th
 Since the server is running in debug mode, it is possible to make changes to the python code and have them immediately take effect without restarting. Once the file is saved, the server will automatically restart.
 
 ## REST API
-The web-server portion of the application takes advantage of a REST API that was created using the Django Rest Framework. There are 2 files locates in score/utility that give examples of how to connect to the REST api usign either Python or Matlab. One of the key elements of both examples is the need to get an Authorization Token first by passing a userid and password. The Python example is in "notebook" format for use in an interactive session for data analysis such as with Pandas, but it can easily be modified as needed.
+The web-server portion of the application takes advantage of a REST API that was created using the Django Rest Framework. There are 2 files located in score/utility that give examples of how to connect to the REST api usign either Python or Matlab. One of the key elements of both examples is the need to get an Authorization Token first by passing a userid and password. The Python example is in "notebook" format for use in an interactive session for data analysis such as with Pandas, but it can easily be modified as needed.
 
 ## Acknowledgements
 This research was supported by Dr. Robert Ledoux from ARPA-E as part of the LOCOMOTIVES research program.
