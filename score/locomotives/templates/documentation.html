@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<div class="container">
+
+  <!-- Main hero unit for a primary marketing message or call to action -->
+  <h1>Quick Start</h1>
+  <a href="{% url 'detaileddocumentation' %}">Detailed Documentation</a><br>
+
+
+  <div class="span10">
+
+
+  <br><br>
+  <video width="960" height="540" controls>
+    <source src="{% static 'images/locom6.mp4' %}" type="video/mp4">
+  </video>
+  <br><br>
+  
+    The locomotives testbed is partitioned into four main categories:<br>
+    •	<b>Routes</b>: a list of prepopulated routes, including gradient and curvative metrics.<br>
+    •	<b>Consists</b>: a list of available consists, with locomotives and freight cars, where users can develop custom consist configurations<br>
+    •	<b>Analysis</b>: Performs a fuel and emissions analysis for a selected Route and Consist<br>
+    •	<b>Trade Studies</b>: Performs a trade study with multiple Routes and Consists<br> 
+
+    <!-- <img src="{% static 'images/pict1.png' %}" width="600" height="480"></img> -->
+
+    <br>
+    <h2>Routes</h2>
+    A list of prepopulated routes is displayed using the <a href="\routelist">Routes</a> link in the top toolbar or button on the main page. To view the details of a route, select a route link to view the individual route, which displays elevation, gradient, curvature, and maximum speed values. One can highlight the location within the plot views, and a geolocation point identifies its position in the map view. When one zooms within the route plots, the map view is updated with the queried section of track. Zoom operations are performed using the left mouse button and drag controls.<br>
+    <br>
+    <img style="border:2px solid black" src="{% static 'images/route.gif' %}" width="1024" height="780"></img>
+    <br>
+  
+    <br>
+    <h2>Consists</h2>
+    A list of prepopulated consists is displayed using the <a href="\consistlist">Consists</a> link in the top toolbar or button on the main page, along with a list of predefined diesel, battery/electric, and fuel cell locomotives. Users can view the details of consist and locomotives by selecting the name links, and a new window will show the details of the selected consist car. Users can create custom consist configurations using the Create Consist Button, where each consist can include [1,N] cars, where there needs to be at least one locomotive to drive the consist. The user can assign an identifier or name to the consist, and they can add cars to the consist. When adding cars, on can choose from the following options : 
+    Container on Flat Car , Double Stack , Tank Car , Trailer on Car , Diesel/Battery/Electric/FuelCell Locatives
+    <br><br>
+    <img style="border:2px solid black" src="{% static 'images/consist.gif' %}" width="1024" height="780"></img>
+
+    <!--
+    <img src="{% static 'images/pict2.png' %}" width="800" height="600"></img>
+    <img src="{% static 'images/pict3.png' %}" width="800" height="600"></img>
+    -->
+
+    <br>
+    <br>
+    
+    <h2>Analysis</h2>
+    A fuel and emissions analysis is performed using the <a href="\analysis">Analysis</a> link in the top toolbar or button on the main page. This will open an analysis input page, where a user enters the selected route, consist, powering policy, braking policy, and maximum consist speed. All analyses are sent to the server and results are returned to the Results list. Selecting the View button opens a results view, where power usage is partitioned by type along the distance of a route, along with speed, track elevation, and battery usage using bar/line graphs on the right of the view (where the x axis represents the distance along the route). Summary metrics are displayed on the left of the Results display. A description of variables is as follows:<br>
+    •	<b>Duration_hrs</b> : total duration to travel the route without stops<br>
+    •	<b>Diesel_consumed_kg</b> : total diesel consumed by the consist in kilograms<br>
+    •	<b>Hydrogen_consumed_kg</b> : total hydrogen consumed by the consist in kilograms<br> 
+    •	<b>Energy_cost</b> : estimation of diesel and hydrogen cost<br>
+    •	<b>Cost_per_ton_mile</b> : proportion of energy cost based on moving a ton of freight per mile<br>
+    •	<b>Max_speed_mph</b> : the maximum consist speed in miles per hour<br>
+    •	<b>Power_order</b> : order of using locomotive power sources based on energy required<br>
+    •	<b>Braking</b> : braking policy of the consist<br>
+    •	<b>Total_weight_tons</b> : the total weight of the consist in tons<br>
+    •	<b>Number_of_cars</b> : the total number of locomotives and freight cars included in the consist<br>
+    •	<b>Trailing_weight_tons</b> : the total weight of the freight cars in the consist<br>
+    •	<b>Max_power_hp</b> : the maximum power of a diesel or fuel cell locomotive in horsepower<br>
+    •	<b>Max_battery_energy_kw_hr</b> : the maximum power of the battery/electric locomotive in kilowatt hours<br>
+    <br><br>
+
+    <img style="border:2px solid black" src="{% static 'images/analysis.gif' %}" width="1024" height="780"></img>
+
+    <br><br>
+    <h2>Trade Studies</h2>
+    A Trade Study Analysis is performed using the <a href="\tradestudies">Trade Studies</a> link in the top toolbar or button on the main page. This will open an trade study input page, where a user selects multiple routes, consists, powering policies, braking policies, and maximum consist speeds. For each combination of inputs, a ELTD analysis will run on the server, and results for each run are listed in the Trade Study List at the bottom of the input page. The View TradeSpace Button opens a new window, where all runs are included within either a 2D or 3D scatter plot as a point. Users can place any variable on the spatial axes of the plot, along with assigning variables to the color and size of points. 
+    <br><br>
+
+    <img style="border:2px solid black" src="{% static 'images/tradespace.gif' %}" width="1024" height="780"></img>
+
+  </div>
+  
+
+{% endblock %}
