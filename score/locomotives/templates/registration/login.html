@@ -37,13 +37,13 @@
     <p><h2>Synthesis of COnsists as Rolling Energy micro-grids (v1.0)</h2></p>
     <p>A toolset for exploring and optimizing energy, power, cost and emissions for rail transportation. 
       Additional details can be found by selecting the Docs link in the upper right.</p>
-    <h3>Enter your login information.</h3>
   </div>
 
   <div class="row-fluid">
     <div class="span12">
       <form method="post">
         {% csrf_token %}
+        <h3>Enter your login information.</h3><br><br>
         {{ form.as_p }}
         <button type="submit">Log In</button>
         or <a href="\signup"> Request Account or Forgot Password </a>

@@ -14,7 +14,8 @@ from locomotives import views
 from locomotives import api_views
 
 urlpatterns = [
-    path('', views.home, name='home'),
+    path('', views.about, name='about'),
+    path('home/', views.home, name='home'),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
@@ -46,7 +47,7 @@ urlpatterns = [
     path('add-user-request/<int:pk>', views.adduserrequest, name="adduserrequest"),
     path('add-user/', views.adduser, name="adduser"),
     path('ignore-user/<int:pk>', views.ignoreuser, name="ignoreuser"),
-    path('about/', views.about, name="about"),
+    #path('about/', views.about, name="about"),
     path('contact/', views.contact, name="contact"),
     path('datalogs/', views.datalogs, name="datalogs"),
     path('feedback/', views.feedback, name="feedback"),
