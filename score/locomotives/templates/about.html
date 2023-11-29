@@ -14,78 +14,6 @@
    width: 100%; height: 100%;
   }
 
-  .loader {
-    border: 16px solid #f3f3f3; /* Light grey */
-    border-top: 16px solid #3498db; /* Blue */
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 2s linear infinite;
-    margin: 0;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    -ms-transform: translate(-50%, -50%);
-    transform: translate(-50%, -50%);
-  }
-
-  .loadertop {
-    border: 16px solid #f3f3f3; /* Light grey */
-    border-top: 16px solid #3498db; /* Blue */
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 2s linear infinite;
-    margin: 0;
-    position: absolute;
-    top: 10%;
-    left: 50%;
-    -ms-transform: translate(-50%, -50%);
-    transform: translate(-50%, -50%);
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-   100% { transform: rotate(360deg); }
-  }
-
-  #modules {
-    padding: 20px;
-    background: #eee;
-    margin-bottom: 20px;
-    z-index: 1;
-    border-radius: 10px;
-  }
-
-  #dropzone {
-    padding: 10px;
-    background: #eee;
-    min-height: 100px;
-    margin-bottom: 20px;
-    z-index: 0;
-    border-radius: 10px;
-  }
-
-  #sortable1, #sortable2, #sortable3, #sortable4, #sortable5 {
-    border: 1px solid #eee;
-    width: 420px;
-    min-height: 20px;
-    max-height: 300px;
-    overflow: auto; 
-    -webkit-overflow-scrolling: touch;
-    list-style-type: none;
-    margin: 0;
-    padding: 5px 0 0 0;
-    float: left;
-    margin-right: 10px;
-  }
-  #sortable1 li, #sortable2 li, #sortable3 li, #sortable4 li, #sortable5 li {
-    margin: 0 5px 5px 5px;
-    padding: 2px;
-    font-size: 1.0em;
-    width: 380px;
-  }
-
 </style>
 
 <script src="{% static 'js/babel.min.js' %}" crossorigin></script>
@@ -103,7 +31,6 @@
 
 <div class="container">
 
-    <!-- Example row of columns -->
     <div class="row">
       <div class="span4">
         <img src="{% static 'images/arpae_logo.png' %}" style="width:100%;object-fit:contain"></img>
@@ -116,14 +43,12 @@
       </div>
     </div>
 
-  <!-- Main hero unit for a primary marketing message or call to action -->
   <div class="hero-unit">
     <h2>Synthesis of COnsists as Rolling Energy micro-grids (SCORE)</h2><br><br>
     <p><a class="btn btn-primary btn-large" href="{% url 'home' %}">Login or Sign Up</a>
       <a class="btn btn-large" href="{% url 'detaileddocumentation' %}">Documentation &raquo;</a><br><br></p>
   </div>
 
-  <!-- Example row of columns -->
   <div class="row">
     <div class="span6">
       <h2>SCORE Motivation</h2><br>
@@ -151,6 +76,17 @@
         <h4>View Source on <a class="btn btn-large" href="https://github.com/ARPA-E-LOCOMOTIVES/SCORE">Github</a></h4>
     </div>
   </div>
+
+  <br><br><br><br>
+  <div class="row">
+    <div class="span12">
+        <h2>Example Screenshots</h2>
+        <br>
+        <img style="border:2px solid black" src="{% static 'images/analysis.gif' %}" style="width:100%;object-fit:contain"></img>
+    </div>
+  </div>
+
+  
 
   <hr>
 
