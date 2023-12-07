@@ -29,9 +29,17 @@ If you want to save your database to share with others or for backup, from the c
 
 If you want to see more about what is going on with the docker containers enter "docker-compose logs -f". This will display the logs from all of the containers as they are running - the output to each of their stdout.
 
+When usign this code in a production environment, use the docker-compose.prod.yml file to build and start the Docker containers. This compose file used NGINX as a reverse proxy server to deliver static web content and route dynamic content to gunicorn. It does not use the built-in Django web server process. The production docker compose file makes use of the .env.prod file to supply configuration data specific to each installation. In particular one will need to add entries to:
+* DJANGO_ALLOWED_HOSTS=....
+* CSRF_ALLOWED_ORIGINS=....
+The specific valaues to be added can often be determined by reviewing the logs after a failed request.
+
+
 ### Limitations:
 The web server used in this implementation is for development use only. It is the one provided by Django (the python-based web application server used). If you are viewing the logs, you will see each request get logged. This is because it is running in "debug" mode. 
 Since the server is running in debug mode, it is possible to make changes to the python code and have them immediately take effect without restarting. Once the file is saved, the server will automatically restart.
+
+A production ready version is also provided in this distribution. This is used by indicating the alternative docker-compose.prod.yml file using the '-f' option for all docker compose commands.
 
 ## REST API
 The web-server portion of the application takes advantage of a REST API that was created using the Django Rest Framework. There are 2 files located in score/utility that give examples of how to connect to the REST api usign either Python or Matlab. One of the key elements of both examples is the need to get an Authorization Token first by passing a userid and password. The Python example is in "notebook" format for use in an interactive session for data analysis such as with Pandas, but it can easily be modified as needed.

@@ -26,7 +26,7 @@ services:
     volumes:
       - static_volume:/usr/src/locomotives/staticfiles
     ports:
-      - 1337:80
+      - 80:80
     depends_on:
       - web
   db:
