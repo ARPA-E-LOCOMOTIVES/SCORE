@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d
 from scipy.optimize import brentq
 import time
 
-from .models import Segment, ConsistCar, PowerToWheels, Route
+from .models import Segment, ConsistCar, PowerToWheels, Route, Route2, Line
 
 
 # the following constants are for fuel and ghg emissions
@@ -58,7 +58,58 @@ def get_segments(route):
         }
         segment_data.append(seg)
 
-        route_data = {
+    route_data = {
+        'segments': segment_data,
+        'total_length': total_length
+    }
+
+    return route_data
+
+def get_lines(route):
+    route = Route2.objects.get(pk=route)
+    # we take the path and get line segments in order
+    # to do this we select a line segment that has two consecutive points as to and fr
+    path = route.path
+    segment_data = []
+    total_length = 0.0
+    order = 0
+    for i in range(len(path)-1):
+        nodes = [path[i],path[i+1]]
+        lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
+        if lines.count() > 0:
+            line = lines[0]
+            # create a list os distances between consecutive xyz points
+            xyz = np.array(line.xyz)
+            d=[]
+            for i in range(len(xyz)-1):
+                d.append(np.linalg.norm(xyz[i+1]-xyz[i]))
+            if line.from_node==nodes[0]:
+                # forward travel - maintain order
+                for i in range(len(d)):
+                    total_length=total_length+d[i]
+                    seg = {'length': d[i],
+                           'degrees' : line.curvature[i],
+                           'gradient': line.gradient[i],
+                           'distance': total_length,
+                           'order': order
+                    }
+                    order=order+1
+                    segment_data.append(seg)
+            else:
+                # reverse travel
+                for i in range(len(d)):
+                    j = len(d)-i
+                    total_length=total_length+d[j]
+                    seg = {'length': d[j],
+                           'degrees': line.curvature[j],
+                           'gradient': -line.gradient[j],
+                           'distance': total_length,
+                           'order': order
+                    }
+                    order=order+1
+                    segment_data.append(seg)
+
+    route_data = {
         'segments': segment_data,
         'total_length': total_length
     }

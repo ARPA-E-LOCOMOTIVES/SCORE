@@ -82,6 +82,7 @@ class Line(models.Model):
     fra_id = models.IntegerField()    
     from_node = models.IntegerField()
     to_node = models.IntegerField()
+    length = models.FloatField(default=0.0)
     rights = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
     xyz = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
     lnglat = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)

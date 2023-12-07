@@ -22,7 +22,7 @@ from django.http import HttpResponse, JsonResponse
 
 from .tasks import eval_ltd
 from celery.result import AsyncResult
-from .ltd import get_elevations
+from .ltd import get_elevations, get_lines
 
 import json
 
@@ -68,6 +68,7 @@ def add_line(request):
     fra_id = int(data.get('fra_id'))
     from_node = int(data.get('from_node'))
     to_node = int(data.get('to_node'))
+    length = float(data.get('length'))
     # convert the strings in the array to integers
     rights = [int(i) for i in data.getlist('rights')]
     # this is a single dimension array of strings that represent floats
@@ -81,6 +82,7 @@ def add_line(request):
         obj = Line.objects.get(fra_id=fra_id)
         obj.from_node=from_node
         obj.to_node=to_node
+        obj.length=length
         obj.rights=rights
         obj.xyz=xyz
         obj.lnglat=lnglat
@@ -89,7 +91,7 @@ def add_line(request):
         obj.save()
         print('udpated: ', obj.fra_id )
     except Line.DoesNotExist:
-        obj = Line(fra_id=fra_id, from_node=from_node, to_node=to_node, rights=rights, xyz=xyz, lnglat=lnglat, gradient=gradient, curvature=curvature)
+        obj = Line(fra_id=fra_id, from_node=from_node, to_node=to_node, length=length, rights=rights, xyz=xyz, lnglat=lnglat, gradient=gradient, curvature=curvature)
         obj.save()
         print('added: ', obj.fra_id)
 
@@ -150,25 +152,12 @@ def add_route(request):
 @permission_classes([IsAuthenticated])
 @renderer_classes([JSONRenderer])
 def get_route_detail(request, pk):
-    route = Route2.objects.get(pk=pk)
-    # we take the path and get line segments in order
-    # to do this we select a line segment that has two consecutive points as to and fr
-    path = route.path
-    for i in range(len(path)-1):
-        nodes = [path[i],path[i+1]]
-        print(nodes)
-        try: 
-            line = Line.objects.get(from_node__in=nodes, to_node__in=nodes)
-            if line.from_node==nodes[0]:
-                print('forward', line.fra_id)
-            else:
-                print('reverse', line.fra_id)
-            print(line)
-        except Line.DoesNotExist:
-            print('oops')
-    
 
-    return JsonResponse({'results': route.pk}, status=200)
+    lines = get_lines(pk)
+
+
+    # this isn't doing anything at this point other than to query the database
+    return JsonResponse({'results': lines}, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
