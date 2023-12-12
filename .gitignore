@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 *.geojson
+*.sql
 
 # Environments
 .env
