@@ -69,12 +69,15 @@ def add_line(request):
     from_node = int(data.get('from_node'))
     to_node = int(data.get('to_node'))
     length = float(data.get('length'))
+    net = data.get('net')
+    rights = data.getlist('rights')
     # convert the strings in the array to integers
-    rights = [int(i) for i in data.getlist('rights')]
     # this is a single dimension array of strings that represent floats
     # we will convert them to floats, but maintain the single dimension
-    xyz = [float(f) for f in data.getlist('xyz')]
+    elevation = [float(f) for f in data.getlist('elevation')]
+    xy = [float(f) for f in data.getlist('xy')]
     lnglat = [float(f) for f in data.getlist('lnglat')]
+    distance = [float(f) for f in data.getlist('distance')]
     gradient = [float(f) for f in data.getlist('gradient')]
     curvature = [float(f) for f in data.getlist('curvature')]
 
@@ -84,18 +87,41 @@ def add_line(request):
         obj.to_node=to_node
         obj.length=length
         obj.rights=rights
-        obj.xyz=xyz
+        obj.net=net
+        obj.xy=xy
         obj.lnglat=lnglat
+        obj.elevation=elevation
+        obj.distance=distance
         obj.gradient=gradient
         obj.curvature=curvature
         obj.save()
         print('udpated: ', obj.fra_id )
     except Line.DoesNotExist:
-        obj = Line(fra_id=fra_id, from_node=from_node, to_node=to_node, length=length, rights=rights, xyz=xyz, lnglat=lnglat, gradient=gradient, curvature=curvature)
+        obj = Line(fra_id=fra_id, from_node=from_node, to_node=to_node, length=length, net=net, rights=rights, elevation=elevation, xy=xy, lnglat=lnglat, distance=distance, gradient=gradient, curvature=curvature)
         obj.save()
         print('added: ', obj.fra_id)
 
     return JsonResponse({'results':1}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def get_railroad_lines(request, code):
+    print(code)
+    try:
+        status = 200
+        lines = Line.objects.filter(rights__contains=code)
+        print(lines.count())
+        all_lines = Line.objects.all()
+        print(all_lines.count())
+        results = LineSerializer(lines, many=True).data
+    except Railroad.DoesNotExist:
+        status = 204
+        results = {}
+    
+    return JsonResponse({'results': results}, status=status)
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

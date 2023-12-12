@@ -83,11 +83,14 @@ class Line(models.Model):
     from_node = models.IntegerField()
     to_node = models.IntegerField()
     length = models.FloatField(default=0.0)
+    net = models.CharField(max_length=1, null=True, blank=True)
     rights = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
-    xyz = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    xy = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    elevation = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
     lnglat = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
     curvature = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
     gradient = models.JSONField(encoder=DjangoJSONEncoder,  null=True, blank=True)
+    distance = models.JSONField(encoder=DjangoJSONEncoder,  null=True, blank=True)
 
     def __str__(self):
         return str(self.fra_id)

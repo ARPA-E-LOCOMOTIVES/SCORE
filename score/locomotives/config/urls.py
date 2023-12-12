@@ -62,6 +62,7 @@ urlpatterns = [
     path('api/line/add/', api_views.add_line, name='add_line'),
     path('api/line/delete/<str:fra_id>', api_views.delete_line, name='delete_line'),
     path('api/line/<str:fra_id>', api_views.get_line, name='get_line'),
+    path('api/lines/railroad/<str:code>', api_views.get_railroad_lines, name='get_railroad_lines'),
     path('api/yard/add/', api_views.add_yard, name='add_yard'),
     path('api/yard/all/', api_views.all_yard, name='all_yard'),
     path('api/yard/<str:yard_id>', api_views.get_yard, name='get_yard'),
