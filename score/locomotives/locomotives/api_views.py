@@ -22,7 +22,7 @@ from django.http import HttpResponse, JsonResponse
 
 from .tasks import eval_ltd
 from celery.result import AsyncResult
-from .ltd import get_elevations, get_lines
+from .ltd import get_elevations, get_lines, update_elevations
 
 import json
 
@@ -184,6 +184,32 @@ def get_route_detail(request, pk):
 
     # this isn't doing anything at this point other than to query the database
     return JsonResponse({'results': lines}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def get_route_elevations(request, pk):
+
+    elevations = get_elevations(pk)
+
+
+    # this isn't doing anything at this point other than to query the database
+    return JsonResponse({'results': elevations}, status=200)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def update_route_elevations(request):
+
+    data = request.data
+    route = data.get('route')
+    elevations = [float(i) for i in data.getlist('elevations')]
+    gradients = [float(i) for i in data.getlist('gradients')]
+    
+    result = update_elevations(route, elevations, gradients)
+
+    # this isn't doing anything at this point other than to query the database
+    return JsonResponse({'results': 1}, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

@@ -66,6 +66,8 @@ def get_segments(route):
     return route_data
 
 def get_lines(route):
+    # this will get the lines for a route
+    # it will also add the starting elevation
     route = Route2.objects.get(pk=route)
     # we take the path and get line segments in order
     # to do this we select a line segment that has two consecutive points as to and fr
@@ -73,37 +75,43 @@ def get_lines(route):
     segment_data = []
     total_length = 0.0
     order = 0
+    start_elevation = -1.0
+    print(len(path))
     for i in range(len(path)-1):
         nodes = [path[i],path[i+1]]
         lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
         if lines.count() > 0:
             line = lines[0]
-            # create a list os distances between consecutive xyz points
-            xyz = np.array(line.xyz)
-            d=[]
-            for i in range(len(xyz)-1):
-                d.append(np.linalg.norm(xyz[i+1]-xyz[i]))
+            d = np.array(line.distance)
+            # print(line.fra_id, line.distance)
             if line.from_node==nodes[0]:
                 # forward travel - maintain order
-                for i in range(len(d)):
-                    total_length=total_length+d[i]
-                    seg = {'length': d[i],
-                           'degrees' : line.curvature[i],
-                           'gradient': line.gradient[i],
+                for j in range(len(d)):
+                    if i==0 and j==0:
+                        start_elevation = line.elevation[0]
+                    total_length=total_length+d[j]
+                    seg = {'length': d[j],
+                           'degrees' : line.curvature[j],
+                           'gradient': line.gradient[j],
                            'distance': total_length,
+                           'elevation': line.elevation[j+1],
                            'order': order
                     }
                     order=order+1
                     segment_data.append(seg)
             else:
                 # reverse travel
-                for i in range(len(d)):
-                    j = len(d)-i
-                    total_length=total_length+d[j]
-                    seg = {'length': d[j],
-                           'degrees': line.curvature[j],
-                           'gradient': -line.gradient[j],
+                for j in range(len(d)):
+                    k = len(d)-(j+1)
+                    if i==0 and j==0:
+                        start_elevation = line.elevation[-1]
+                    total_length=total_length+d[k]
+                    print(i, j, k, len(line.elevation))
+                    seg = {'length': d[k],
+                           'degrees': line.curvature[k],
+                           'gradient': -line.gradient[k],
                            'distance': total_length,
+                           'elevation': line.elevation[k+1],
                            'order': order
                     }
                     order=order+1
@@ -111,10 +119,79 @@ def get_lines(route):
 
     route_data = {
         'segments': segment_data,
+        'start_elevation': start_elevation,
         'total_length': total_length
     }
 
     return route_data
+
+def get_elevations(route):
+    route = Route2.objects.get(pk=route)
+    # we take the path and get line segments in order
+    # to do this we select a line segment that has two consecutive points as to and fr
+    path = route.path
+    elevations = []    
+
+    for i in range(len(path)-1):
+        nodes = [path[i],path[i+1]]
+        lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
+        if lines.count() > 0:
+            line = lines[0]
+            d = np.array(line.distance)
+            # print(line.fra_id, line.distance)
+            if line.from_node==nodes[0]:
+                # forward travel - maintain order
+                for j in range(len(d)):
+                    elevations.append(line.elevations[j])
+                if i == (len(path)-2):
+                    elevations.append(line.elevations[j+1])
+                
+                
+
+            else:
+                # reverse travel
+                for j in range(len(d)):
+                    k = len(d)-(j+1)
+                    elevations.append(line.elevations[k])
+                if i == (len(path)-2):
+                    elevations.append(line.elevations[k+1])
+
+    elevation_data = {'elevations': elevations}
+    return elevation_data
+
+def update_elevations(route, elevations, gradients):
+    r = Route2.objects.get(pk=route)
+
+    # this routine needs to go through each Line segment and update the elevations in it
+    # This is a tedious process that requires very careful book-keeping on the list of values
+    path = r.path
+    start = 0
+    for i in range(len(path)-1):
+        nodes = [path[i],path[i+1]]
+        lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
+        if lines.count() > 0:
+            line = lines[0]
+            ld = len(line.distance)
+            # print(start, ld, len(elevations), len(gradients))
+            # print(line.fra_id, line.distance)
+            if line.from_node==nodes[0]:
+                # forward travel - maintain order
+                eles = elevations[start:start+ld+1]
+                grads = gradients[start:start+ld]
+            else:
+                # reverse travel
+                eles = elevations[start:start+ld+1][::-1]
+                grads = list(-np.array(gradients[start:start+ld][::-1]))
+            start = start + ld
+            line.elevation=eles
+            line.gradient=grads
+            # print(i, ld, len(grads), len(eles))
+            # lets not save it to start - don't want to mess things up
+            line.save()
+            # print(line)
+
+    return 1
+
 
 def get_ltd_input(route, consist, policy):
 
