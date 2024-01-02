@@ -81,6 +81,34 @@ def add_line(request):
     gradient = [float(f) for f in data.getlist('gradient')]
     curvature = [float(f) for f in data.getlist('curvature')]
 
+    temp_speed = data.getlist('max_speed')
+    # if no speed was included then max speed is a function of curvature for each segment in the line.
+    if len(temp_speed)==0:
+        max_speed = []
+        for curve in curvature:
+            if curve <= 2.0:
+                speed = 60
+            elif curve <= 3.0:
+                speed = 55
+            elif curve <= 4.0:
+                speed = 50
+            elif curve <= 5.0:
+                speed = 45
+            elif curve <= 6.0:
+                speed = 40
+            elif curve <= 8.0:
+                speed = 35
+            elif curve <= 9.0:
+                speed = 30
+            elif curve <= 10.0:
+                speed = 25
+            else:
+                speed = 20
+            max_speed.append(speed)
+
+    else:
+        max_speed = [float(f) for f in temp_speed]
+        
     try:
         obj = Line.objects.get(fra_id=fra_id)
         obj.from_node=from_node
@@ -88,6 +116,7 @@ def add_line(request):
         obj.length=length
         obj.rights=rights
         obj.net=net
+        obj.max_speed=max_speed
         obj.xy=xy
         obj.lnglat=lnglat
         obj.elevation=elevation
@@ -97,7 +126,7 @@ def add_line(request):
         obj.save()
         print('udpated: ', obj.fra_id )
     except Line.DoesNotExist:
-        obj = Line(fra_id=fra_id, from_node=from_node, to_node=to_node, length=length, net=net, rights=rights, elevation=elevation, xy=xy, lnglat=lnglat, distance=distance, gradient=gradient, curvature=curvature)
+        obj = Line(fra_id=fra_id, from_node=from_node, to_node=to_node, length=length, net=net, max_speed=max_speed, rights=rights, elevation=elevation, xy=xy, lnglat=lnglat, distance=distance, gradient=gradient, curvature=curvature)
         obj.save()
         print('added: ', obj.fra_id)
 

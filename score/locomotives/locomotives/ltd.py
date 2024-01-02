@@ -65,6 +65,7 @@ def get_segments(route):
 
     return route_data
 
+
 def get_lines(route):
     # this will get the lines for a route
     # it will also add the starting elevation
@@ -94,6 +95,7 @@ def get_lines(route):
                            'degrees' : line.curvature[j],
                            'gradient': line.gradient[j],
                            'distance': total_length,
+                           'max_speed': line.max_speed[j],
                            'elevation': line.elevation[j+1],
                            'order': order
                     }
@@ -111,6 +113,7 @@ def get_lines(route):
                            'degrees': line.curvature[k],
                            'gradient': -line.gradient[k],
                            'distance': total_length,
+                           'max_speed': line.max_speed[k],
                            'elevation': line.elevation[k+1],
                            'order': order
                     }
@@ -195,7 +198,8 @@ def update_elevations(route, elevations, gradients):
 
 def get_ltd_input(route, consist, policy):
 
-    route_data = get_segments(route)
+    # route_data = get_segments(route)
+    route_data = get_lines(route)
 
     consist_list = ConsistCar.objects.filter(consist=consist).order_by('position')
 

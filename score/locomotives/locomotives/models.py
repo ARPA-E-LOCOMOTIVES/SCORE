@@ -85,6 +85,7 @@ class Line(models.Model):
     length = models.FloatField(default=0.0)
     net = models.CharField(max_length=1, null=True, blank=True)
     rights = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    max_speed = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
     xy = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
     elevation = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
     lnglat = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
