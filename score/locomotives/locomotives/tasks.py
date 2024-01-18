@@ -26,6 +26,7 @@ def eval_ltd(self, results_id):
     results.result_code = 1     # update result to indicate running
     results.save()
     # place the query set data into dictionaries
+    print("in tasks we have route: ", results.route)
     route, consist, policy = ltd.get_ltd_input(results.route, results.consist, results.policy)
     # determine maximum limits on power, energy storage, and braking
     limits = ltd.get_limits(consist, policy)

@@ -69,7 +69,8 @@ def get_segments(route):
 def get_lines(route):
     # this will get the lines for a route
     # it will also add the starting elevation
-    route = Route2.objects.get(pk=route)
+    print("the route being assembled: ", str(route))
+    # route = Route2.objects.get(pk=pk)
     # we take the path and get line segments in order
     # to do this we select a line segment that has two consecutive points as to and fr
     path = route.path

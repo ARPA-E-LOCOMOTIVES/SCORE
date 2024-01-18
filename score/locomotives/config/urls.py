@@ -70,6 +70,7 @@ urlpatterns = [
     path('api/route/detail/<str:pk>', api_views.get_route_detail, name='get_route_detail'),
     path('api/route/elevations/<str:pk>', api_views.get_route_elevations, name='get_route_elevations'),
     path('api/route/elevations/update/', api_views.update_route_elevations, name='update_route_elevations'),
+    path('api/route/list/', api_views.get_route_list, name="list_route"),
     path('api/railroad/', api_views.RailroadList.as_view()),
     path('api/ltd-status/<str:result_id>/', api_views.ltd_status, name='ltd_status'),
     path('api/get_ltd_result/<str:result_id>/', api_views.get_ltd_result, name='get_ltd_result'),

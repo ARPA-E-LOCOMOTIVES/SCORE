@@ -115,6 +115,9 @@ class Route2(models.Model):
 
     def __str__(self):
         return self.origin.name + ' - ' + self.destination.name
+    
+    def get_absolute_url(self):
+        return reverse('route-detail', kwargs={'pk': self.pk})
 
 class CarType(models.Model):
     code = models.CharField(max_length=1)
@@ -371,7 +374,7 @@ class Session(models.Model):
     user = models.ForeignKey(User, default=None, null=True, on_delete=models.CASCADE) 
 
 class LTDResults(models.Model):
-    route = models.ForeignKey(Route, on_delete=models.CASCADE)
+    route = models.ForeignKey(Route2, on_delete=models.CASCADE)
     consist = models.ForeignKey(Consist, on_delete=models.CASCADE)
     policy = models.ForeignKey(Policy, default=None, on_delete=models.CASCADE)
     analysis_date = models.DateField(null=True, blank=True)

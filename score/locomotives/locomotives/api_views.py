@@ -208,7 +208,8 @@ def add_route(request):
 @renderer_classes([JSONRenderer])
 def get_route_detail(request, pk):
 
-    lines = get_lines(pk)
+    route = Route2.objects.get(pk=pk)
+    lines = get_lines(route)
 
 
     # this isn't doing anything at this point other than to query the database
@@ -300,7 +301,7 @@ def evaluate(request):
     else:
         rapid = False
 
-    r = Route.objects.get(id=route_id)
+    r = Route2.objects.get(id=route_id)
     c = Consist.objects.get(id=consist_id)
     # we can change the max speed later on in the interface
     p, created = Policy.objects.get_or_create(type=policy_type, power_order=power_order, braking=braking, max_speed=max_speed)
@@ -360,7 +361,7 @@ def ltd_status(request, result_id):
         'result_id': result.id,
         'state': result.result_code,
         'progression': result.status,
-        'route': result.route.name,
+        'route': str(result.route),
         'consist': result.consist.name,
         'policy': result.policy.name(),
         'max_speed': round(result.policy.max_speed/MPH2MPS),  # convert back to MPH
@@ -374,7 +375,7 @@ def get_ltd_result(request, result_id):
     result = LTDResults.objects.get(id = result_id)
     response = {
         'route': {
-            'name': result.route.name,
+            'name': str(result.route),
             'id' : result.route.id
         },
         'consist': {
@@ -414,9 +415,10 @@ def get_elevation(request, pk):
 @permission_classes([IsAuthenticated])
 def get_route_list(request):
     route_info = {}
-    routes = get_visible(request.user, Route.objects.all())
+    # routes = get_visible(request.user, Route.objects.all())
+    routes = Route2.objects.all()
     for route in routes:
-        route_info[route.id] = route.name
+        route_info[route.id] = str(route)
 
     return JsonResponse(route_info, status=200)
 
