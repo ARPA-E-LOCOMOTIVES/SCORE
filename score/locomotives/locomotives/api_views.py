@@ -22,7 +22,7 @@ from django.http import HttpResponse, JsonResponse
 
 from .tasks import eval_ltd
 from celery.result import AsyncResult
-from .ltd import get_elevations, get_lines, update_elevations
+from .ltd import get_elevations, get_lines, update_elevations, get_map
 
 import json
 
@@ -222,9 +222,16 @@ def get_route_elevations(request, pk):
 
     elevations = get_elevations(pk)
 
-
-    # this isn't doing anything at this point other than to query the database
     return JsonResponse({'results': elevations}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def get_route_map(request, pk):
+
+    data = get_map(pk)
+
+    return JsonResponse({'results': data}, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -407,7 +414,7 @@ def get_elevation(request, pk):
     # for i, seg in enumerate(segments):
     #     route_dist_seg += seg.arc_distance
     #    elevation_data.append([route_dist_seg, seg.locations.all()[1].smooth_elev_m])
-    elevation_data, elevation_gain, elevation_loss = get_elevations(pk)
+    elevation_data = get_elevations(pk)
     elevation_lines = { 'data': elevation_data}
     return JsonResponse(elevation_lines, status=200)
 

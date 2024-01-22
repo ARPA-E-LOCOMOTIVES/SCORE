@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+<div class="container-fluid">
+    <div style="margin:10px">
+      <h2><b>Routes</b></h2>
+      A list of example routes that are available. The data was generated from the NARN database. Select a route on the left to view its elevation, gradient, curvature, and maximum speed details on the right.
+    </div>
+</div>
+{% csrf_token %}
+<div class="span4">
+  <br />
+  <div style="margin-left:20px">
+    <h4>Select Route : </h4><br>
+    <select name='routes' id="route" onchange="getRoute()">
+      <option value="-" id="loading1">Loading</option>
+    </select>
+  </div>
+</div>
+
+<div class="span8" id="map" style="height:600px;width:600px"></div>
+
+<br />
+
+
+<div class="span12" style="margin:10px">
+  <h4>Track Elevation</h4>
+  <div id="elevation_details" style="height: 180px; width: 1000px;"></div><br>
+</div>
+
+<br />
+
+<script src="{% static 'js/d3.d4.min.js' %}"></script>
+<script src="{% static 'js/vis/d3-line-plot.js' %}"></script>
+<script src="{% static 'js/map/map_route.js' %}"></script>
+<script src="{% static 'js/vis/d3-stacked-bar-plot.js' %}"></script>
+
+<script type="text/javascript">
+
+  var width = window.screen.width;
+  var plot_width = 7*width/10;
+  var route_id;
+  var all_plot_listeners = [];
+  var map_route; 
+
+  function getRoute() {
+    route_id = $('#route').val();
+    updateElevation();
+  }
+
+  function updateElevation() {
+      $.ajax({
+        url: `/api/route/elevations/${ route_id }/`,
+        type: 'GET'
+      })
+      .done((elevation_lines) => {
+        var elevations = []
+        const elevation_data = elevation_lines.data;
+        for(var row in elevation_data){
+          elevations.push({x: 0.000621371*elevation_data[row][0], y: 3.28084*elevation_data[row][1]});
+        }
+        var elevations_plot = new d3LinePlot(elevations, 'elevation_details');
+        elevations_plot.set_size(plot_width,180);
+        elevations_plot.set_titles("distance (mi)", "feet");
+        elevations_plot.include_legend_area();
+        elevations_plot.draw();  
+
+        // add listener for elevation plot
+        add_plot_listener(elevations_plot);
+      });
+
+
+    }
+
+    function add_plot_listener(plot) {
+      if (all_plot_listeners.length > 0 ) {
+        for (i in all_plot_listeners) {
+          var p = all_plot_listeners[i];
+          p.add_listener(plot);
+          plot.add_listener(p);
+        }
+        all_plot_listeners.push(plot);
+      } else {
+        all_plot_listeners.push(plot);
+      }
+    
+
+    }
+
+    function updateMap() {
+      $.ajax({
+        url: `/api/route/map/${ route_id }/`,
+        type: 'GET'
+      })
+      .done((map_data) => {
+        console.log(map_data.results.geometry);
+        // map_route = new MapRoute(routeLines, routeDistances);
+      });
+    }
+
+    //use this function to load data once the page loads
+    $(function () {
+        // load routes into option box
+        $.ajax({
+          url: '/api/get_route_list/',
+          type: 'GET'
+        })
+        .done((routes) => {
+          $.each(routes, function(id, route_name){
+            var option = new Option(route_name, id);
+            $("#route").append(option);
+          });
+          $('#loading1').remove();
+          // automatically load the data for the current route
+          getRoute();
+          updateMap();
+
+        })
+    });
+</script>
+
+
+{% endblock %}

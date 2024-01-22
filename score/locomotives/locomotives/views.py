@@ -311,7 +311,8 @@ def routelist(request):
     context['cached_route_lines'] = json.dumps(cached_info)
 
     log_action(request, 'route-list.html')
-    return render(request, 'route-list.html', context)
+    # return render(request, 'route-list.html', context)
+    return render(request, 'route2-list.html', context)
 
 # Create your views here.
 @login_required

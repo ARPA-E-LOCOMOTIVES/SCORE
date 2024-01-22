@@ -134,7 +134,9 @@ def get_elevations(route):
     # we take the path and get line segments in order
     # to do this we select a line segment that has two consecutive points as to and fr
     path = route.path
-    elevations = []    
+    elevations = [] 
+    distances = [0.0]   
+    print('hello from ltd.get_elevations')
 
     for i in range(len(path)-1):
         nodes = [path[i],path[i+1]]
@@ -142,6 +144,9 @@ def get_elevations(route):
         if lines.count() > 0:
             line = lines[0]
             d = np.array(line.distance)
+            # take the cummulative sum of the current array of interpoint distances
+            # and add to it the last value of the current list of distances
+            dist = np.cumsum(d) + distances[-1]
             # print(line.fra_id, line.distance)
             if line.from_node==nodes[0]:
                 # forward travel - maintain order
@@ -161,7 +166,41 @@ def get_elevations(route):
                     elevations.append(line.elevations[k+1])
 
     elevation_data = {'elevations': elevations}
+    print(elevation_data)
     return elevation_data
+
+def get_map(route):
+    route = Route2.objects.get(pk=route)
+
+    path = route.path
+    data = {
+        'distance': [],
+        'geometry': []
+    }
+
+    for i in range(len(path)-1):
+        nodes = path[i], path[i+1]
+        lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
+        if lines.count() > 0:
+            line = lines[0]
+            d = np.array(line.distance)
+            lnglat = np.array(line.lnglat)
+            num_pts = int(len(lnglat)/2)
+            ll = lnglat.reshape((num_pts,2))
+            # print(line.fra_id, line.distance)
+            if line.from_node==nodes[0]:
+                # forward travel - maintain order
+                data['geometry'].append(ll.tolist())
+                data['distance'].append(list(d))
+
+            else:
+                # reverse travel
+                data['geometry'].append(np.flip(ll,0).tolist())
+                data['distance'].append(list(np.flip(d)))
+
+    return data
+        
+
 
 def update_elevations(route, elevations, gradients):
     r = Route2.objects.get(pk=route)
@@ -522,27 +561,27 @@ def create_intervals(consist, route, deltaX=100):
 
     return intervals
 
-def get_elevations(route_id):
-    route = Route.objects.get(id=route_id)
+# def get_elevations(route_id):
+#     route = Route.objects.get(id=route_id)
     # route_data = get_segments(route)
     # segments = route_data['segments']
-    segments = Segment.objects.filter(route=route).order_by('segment_order').all()
-    route_dist_seg = 0
-    elevation_data = []
-    elevation_gain = 0.0
-    elevation_loss = 0.0
-    for i, seg in enumerate(segments):
-        route_dist_seg += seg.arc_distance
-        elevation_data.append([route_dist_seg, seg.locations.all()[1].smooth_elev_m])
-    last_elevation = elevation_data[0][1]
-    for x,z in elevation_data:
-        elevation_change = z - last_elevation
-        if elevation_change < 0:
-            elevation_loss += abs(elevation_change)
-        else:
-            elevation_gain += elevation_change
-        last_elevation = z
-    return elevation_data, elevation_gain, elevation_loss
+#     segments = Segment.objects.filter(route=route).order_by('segment_order').all()
+#     route_dist_seg = 0
+#     elevation_data = []
+#     elevation_gain = 0.0
+#     elevation_loss = 0.0
+#     for i, seg in enumerate(segments):
+#         route_dist_seg += seg.arc_distance
+#         elevation_data.append([route_dist_seg, seg.locations.all()[1].smooth_elev_m])
+#     last_elevation = elevation_data[0][1]
+#     for x,z in elevation_data:
+#         elevation_change = z - last_elevation
+#         if elevation_change < 0:
+#             elevation_loss += abs(elevation_change)
+#         else:
+#             elevation_gain += elevation_change
+#         last_elevation = z
+#    return elevation_data, elevation_gain, elevation_loss
 
 
 
