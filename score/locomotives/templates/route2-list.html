@@ -11,7 +11,7 @@
     </div>
 </div>
 {% csrf_token %}
-<div class="span4">
+<div class="span12">
   <br />
   <div style="margin-left:20px">
     <h4>Select Route : </h4><br>
@@ -21,12 +21,12 @@
   </div>
 </div>
 
-<div class="span8" id="map" style="height:600px;width:600px"></div>
 
-<br />
+<div class="span6" id="map" style="height:600px;width:600px"></div>
 
 
-<div class="span12" style="margin:10px">
+
+<div class="span6" style="margin:10px">
   <h4>Track Elevation</h4>
   <div id="elevation_details" style="height: 180px; width: 1000px;"></div><br>
 </div>
@@ -49,6 +49,7 @@
   function getRoute() {
     route_id = $('#route').val();
     updateElevation();
+    updateMap();
   }
 
   function updateElevation() {
@@ -57,11 +58,14 @@
         type: 'GET'
       })
       .done((elevation_lines) => {
-        var elevations = []
-        const elevation_data = elevation_lines.data;
-        for(var row in elevation_data){
-          elevations.push({x: 0.000621371*elevation_data[row][0], y: 3.28084*elevation_data[row][1]});
-        }
+        var elevations = [];
+        // console.log(elevation_lines);
+        const ele = elevation_lines.results.elevations;
+        const dist = elevation_lines.results.distances;
+        ele.forEach((el, index) => {
+          elevations.push({x: 0.000621371*dist[index], y: 3.28084*el })
+        });
+
         var elevations_plot = new d3LinePlot(elevations, 'elevation_details');
         elevations_plot.set_size(plot_width,180);
         elevations_plot.set_titles("distance (mi)", "feet");
@@ -96,8 +100,22 @@
         type: 'GET'
       })
       .done((map_data) => {
-        console.log(map_data.results.geometry);
-        // map_route = new MapRoute(routeLines, routeDistances);
+        routeLines = [];
+        routeDistances = [];
+
+        geom = map_data.results.geometry;
+        dist = map_data.results.distance;
+
+        dist.forEach((d, index) => {
+          routeLines.push({"type":  "LineString", 
+                           "coordinates": [geom[index], geom[index+1]]
+          });
+          routeDistances.push(0.000621371*d);
+        })
+
+        map_route = new MapRoute(routeLines, routeDistances);
+        // add listener for map plot
+        add_plot_listener(map_route);
       });
     }
 

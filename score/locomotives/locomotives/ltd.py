@@ -142,41 +142,44 @@ def get_elevations(route):
         nodes = [path[i],path[i+1]]
         lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
         if lines.count() > 0:
+            # take first (shortest) line that includes both nodes - it is possible for there to be
+            # more than one line between two nodes
             line = lines[0]
+            # grab an array of the distances between the locations in the line
             d = np.array(line.distance)
-            # take the cummulative sum of the current array of interpoint distances
-            # and add to it the last value of the current list of distances
-            dist = np.cumsum(d) + distances[-1]
+
             # print(line.fra_id, line.distance)
             if line.from_node==nodes[0]:
                 # forward travel - maintain order
+                # there are one more elevation than distance in the lists since the ends most overlap
                 for j in range(len(d)):
-                    elevations.append(line.elevations[j])
+                    elevations.append(line.elevation[j])
+                    # add the distances up
+                    distances.append(distances[-1]+d[j])
+                # When we are at the last path, finally add the end location
                 if i == (len(path)-2):
-                    elevations.append(line.elevations[j+1])
-                
-                
+                    elevations.append(line.elevation[j+1])
 
             else:
                 # reverse travel
                 for j in range(len(d)):
                     k = len(d)-(j+1)
-                    elevations.append(line.elevations[k])
+                    elevations.append(line.elevation[k])
+                    distances.append(distances[-1]+d[k])
                 if i == (len(path)-2):
-                    elevations.append(line.elevations[k+1])
+                    elevations.append(line.elevation[k+1])
 
-    elevation_data = {'elevations': elevations}
-    print(elevation_data)
+    elevation_data = {'elevations': elevations,
+                      'distances': distances}
+    # print(elevation_data)
     return elevation_data
 
 def get_map(route):
     route = Route2.objects.get(pk=route)
 
     path = route.path
-    data = {
-        'distance': [],
-        'geometry': []
-    }
+    distances = [0.0]
+    geometry = []
 
     for i in range(len(path)-1):
         nodes = path[i], path[i+1]
@@ -190,13 +193,29 @@ def get_map(route):
             # print(line.fra_id, line.distance)
             if line.from_node==nodes[0]:
                 # forward travel - maintain order
-                data['geometry'].append(ll.tolist())
-                data['distance'].append(list(d))
+                # there are one more elevation than distance in the lists since the ends most overlap
+                for j in range(len(d)):
+                    geometry.append(list(ll[j]))
+                    # add the distances up
+                    distances.append(distances[-1]+d[j])
+                # When we are at the last path, finally add the end location
+                if i == (len(path)-2):
+                    geometry.append(list(ll[j+1]))
 
             else:
                 # reverse travel
-                data['geometry'].append(np.flip(ll,0).tolist())
-                data['distance'].append(list(np.flip(d)))
+                for j in range(len(d)):
+                    k = len(d)-(j+1)
+                    geometry.append(list(ll[k]))
+                    distances.append(distances[-1]+d[k])
+                if i == (len(path)-2):
+                    geometry.append(list(ll[k+1]))
+
+    # remove the first distance
+    distances.pop(0)
+
+    data = { 'distance': distances,
+            'geometry': geometry}
 
     return data
         

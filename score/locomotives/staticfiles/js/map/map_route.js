@@ -39,7 +39,7 @@ class MapRoute {
     //    "color": "#0044ff",
     //};
 
-    this.route_layer = L.geoJSON(routeLines).addTo(this.map);
+    // this.route_layer = L.geoJSON(routeLines).addTo(this.map);
     this.point_layer = undefined;
 
   }
