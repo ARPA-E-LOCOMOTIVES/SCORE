@@ -180,6 +180,8 @@ def get_map(route):
     path = route.path
     distances = [0.0]
     geometry = []
+    gradients = []
+    curvature = []
 
     for i in range(len(path)-1):
         nodes = path[i], path[i+1]
@@ -198,9 +200,13 @@ def get_map(route):
                     geometry.append(list(ll[j]))
                     # add the distances up
                     distances.append(distances[-1]+d[j])
+                    gradients.append(line.gradient[j])
+                    curvature.append(line.curvature[j])
                 # When we are at the last path, finally add the end location
                 if i == (len(path)-2):
                     geometry.append(list(ll[j+1]))
+                    gradients.append(line.gradient[j])
+                    curvature.append(line.curvature[j])
 
             else:
                 # reverse travel
@@ -208,14 +214,24 @@ def get_map(route):
                     k = len(d)-(j+1)
                     geometry.append(list(ll[k]))
                     distances.append(distances[-1]+d[k])
+                    gradients.append(-line.gradient[k])
+                    curvature.append(line.curvature[k])
                 if i == (len(path)-2):
                     geometry.append(list(ll[k+1]))
+                    gradients.append(-line.gradient[k + 1])
+                    curvature.append(line.curvature[k + 1]) 
 
     # remove the first distance
     distances.pop(0)
+    gradients.pop(0)
+    curvature.pop(0)
 
-    data = { 'distance': distances,
-            'geometry': geometry}
+    data = {'distance': distances,
+            'geometry': geometry, 
+            'gradient': gradients,
+            'curvature': curvature}
+
+    print(geometry)
 
     return data
         
@@ -223,7 +239,6 @@ def get_map(route):
 
 def update_elevations(route, elevations, gradients):
     r = Route2.objects.get(pk=route)
-
     # this routine needs to go through each Line segment and update the elevations in it
     # This is a tedious process that requires very careful book-keeping on the list of values
     path = r.path
