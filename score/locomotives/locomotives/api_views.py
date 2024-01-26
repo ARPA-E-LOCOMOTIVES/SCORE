@@ -227,24 +227,6 @@ def get_route_elevations(request, pk):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @renderer_classes([JSONRenderer])
-def get_route_gradients(request, pk):
-
-    gradients = get_gradients(pk)
-
-    return JsonResponse({'results': gradients}, status=200)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@renderer_classes([JSONRenderer])
-def get_route_max_speeds(request, pk):
-
-    max_speeds = get_max_speeds(pk)
-
-    return JsonResponse({'results': max_speeds}, status=200)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@renderer_classes([JSONRenderer])
 def get_route_map(request, pk):
 
     data = get_map(pk)
