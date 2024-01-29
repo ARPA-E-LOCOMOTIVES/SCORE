@@ -13,3 +13,6 @@ venv.bak/
 
 # temp files
 temp/
+
+# generated static files
+score/locomotives/staticfiles/
