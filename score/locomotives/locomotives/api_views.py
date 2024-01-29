@@ -10,7 +10,7 @@ from locomotives.models import Consist, Route, Policy, LTDResults, ConsistCar, S
 from locomotives.serializers import ConsistSerializer, Route2Serializer, LineSerializer, RailroadSerializer, YardSerializer
 from locomotives.ltd import MPH2MPS, get_segments
 from locomotives.views import get_visible, get_consist_info
-from locomotives.consist_data import get_consist_data
+from locomotives.consist_data import get_consist_details
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -402,6 +402,7 @@ def get_ltd_result(request, result_id):
 def get_consist_data(request, pk):
     # consist = Consist.objects.get(id = pk)
     consist, consist_info, consist_common_info, consist_locomotive_types = get_consist_info(pk)
+    # consist_info = get_consist_info(pk)
     return JsonResponse(consist_info, status=200)
 
 @api_view(['GET'])
@@ -483,23 +484,23 @@ def get_ltd_summary(request, result_id):
         data['constant'] = 1
         data['duration_hrs'] = output['duration']/3600      # convert from seconds to hrs
         perfs = output['perfs']
-        consist_info = get_consist_data(result.consist)
+        consist_info = get_consist_details(result.consist)
         data['diesel_consumed_kg'] = perfs['fuel_diesel'][-1]
         data['hydrogen_consumed_kg'] = perfs['fuel_hydrogen'][-1]
         data['energy_cost'] = perfs['fuel_cost']
         data['cost_per_ton_mile'] = perfs['fuel_cost']/(consist_info['freight_tons']*output['distances'][-1]/MI2M)
         data['max_speed_mph'] = result.policy.max_speed/MPH2MPS
         data['route_id'] = result.route.id
-        data['route_name'] = result.route.name
+        data['route_name'] = str(result.route)
         data['consist_id'] = result.consist.id
         data['consist_name'] = result.consist.name
         s = "automatic"
         if result.policy.type == 'user_fixed':
-            str = ""
+            st = ""
             for p in result.policy.power_order:
                 if p is not None:
-                    str += p + ", "
-            s = str[:-2]
+                    st += p + ", "
+            s = st[:-2]
         data['power_order'] = s
         data['braking'] = result.policy.braking
         data['total_weight_tons'] = consist_info['weight_tons']
@@ -507,7 +508,7 @@ def get_ltd_summary(request, result_id):
         data['trailing_weight_tons'] =  consist_info['trailing_tons']
         data['max_power_hp'] = consist_info['power_hp']
         data['max_battery_energy_kw-hr'] = consist_info['battery_energy']
-        data['diesel_power_hp'] = consist_info['diesel_power_hp']
+        data['diesel_power_kw'] = consist_info['diesel_power_kw']
         data['battery_power_kw'] = consist_info['battery_power_kw']
         data['fuelcell_power_kw'] = consist_info['fuelcell_power_kw']
         data['tonmileperhour'] = consist_info['trailing_tons']*(output['distances'][-1]/MI2M)/data['duration_hrs']
