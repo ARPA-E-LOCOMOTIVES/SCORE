@@ -10,7 +10,7 @@ from .models import ConsistCar
 # fix this as it is copied from api api_views
 KW2HP = 1.34102     # convert kw to hp
 TONNE2TON = 1.10231 # convert tonne (1000 kg) to ton (2000 lbs)
-def get_consist_data(consist):
+def get_consist_details(consist):
     consist_data = {}
     consist_cars = ConsistCar.objects.filter(consist=consist)
     consist_data["name"] = consist.name

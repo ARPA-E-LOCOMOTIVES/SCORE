@@ -32,7 +32,7 @@ from django.contrib.auth.models import User, Group
 # from scipy.interpolate import interp1d
 
 from itertools import permutations
-from locomotives.consist_data import get_consist_data
+from locomotives.consist_data import get_consist_details
 from locomotives.ltd import get_elevations
 
 import csv
@@ -1204,7 +1204,7 @@ def exporttradespace(request, session_id):
                     if p is not None:
                         str += p + ", "
                 s = str[:-2]
-            consist_info = get_consist_data(result.consist)
+            consist_info = get_consist_details(result.consist)
             elevation_data, elevation_gain, elevation_loss = get_elevations(result.route.id)
             values = [output['duration']/3600,
                 elevation_data[-1][0]/MI2M,
