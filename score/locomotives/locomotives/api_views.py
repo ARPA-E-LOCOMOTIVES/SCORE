@@ -252,9 +252,30 @@ def update_route_elevations(request):
 @permission_classes([IsAuthenticated])
 @renderer_classes([JSONRenderer])
 def add_yard(request):
+
     data = request.data
-    print(data)
-    return JsonResponse({'results': 1}, status=200)  
+    code = data.get('code')
+    name = data.get('name')
+    city = data.get('city')
+    state = data.get('state')
+    location = data.get('location')
+    owner = Railroad.objects.get(pk=data.get('owner'))
+
+    try:
+        obj = Yard.objects.get(name=name)
+        obj.code=code
+        obj.city=city
+        obj.state=state
+        obj.location=location
+        obj.save()
+        print('updated yard')
+    except Yard.DoesNotExist:
+        obj = Yard(code=code, name=name, city=city, state=state, location=location, owner=owner)
+        obj.save()
+        print('added yard')
+
+    return JsonResponse({'results': obj.id}, status=200)
+ 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

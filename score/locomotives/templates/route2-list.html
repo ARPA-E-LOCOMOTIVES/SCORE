@@ -157,16 +157,16 @@
       var negative_gradients = []
       grad.forEach((gr, index) => {
         if(gr >= 0){
-          positive_gradients.push({x: 0.000621371*dist[index], y: 100*3.28084*gr });
+          positive_gradients.push({x: 0.000621371*dist[index], y: 100*gr });
           negative_gradients.push({x: 0.000621371*dist[index], y: 0});
         }
         if(gr <= 0){ 
-          negative_gradients.push({x: 0.000621371*dist[index], y: 100*3.28084*gr });
+          negative_gradients.push({x: 0.000621371*dist[index], y: 100*gr });
           positive_gradients.push({x: 0.000621371*dist[index], y: 0});
         }
       });
 
-      var gradient_plot = new d3StackedBarPlot(positive_gradients, 'gradient_details', gradient_map);
+      var gradient_plot = new d3StackedBarPlot(positive_gradients, 'gradient_details', gradient_map, -3, 3);
       gradient_plot.set_size(line_plot_width,plot_height);
       gradient_plot.assign_negative_bars(negative_gradients);
       gradient_plot.set_titles("distance (mi)", "gradient %");
@@ -179,7 +179,7 @@
         curve.push({x: 0.000621371*dist[index], y: cv });
       });
 
-      var curve_plot = new d3StackedBarPlot(curve, 'curvature_details', gradient_map);
+      var curve_plot = new d3StackedBarPlot(curve, 'curvature_details', gradient_map, 0, 20);
       curve_plot.set_size(line_plot_width,plot_height);
       curve_plot.set_titles("distance (mi)", "degrees");
       curve_plot.draw();
@@ -208,6 +208,5 @@
       })
   });
 </script>
-
 
 {% endblock %}

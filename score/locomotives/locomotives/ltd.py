@@ -171,7 +171,7 @@ def get_elevations(route):
 
     elevation_data = {'elevations': elevations,
                       'distances': distances}
-    # print(elevation_data)
+
     return elevation_data
 
 def get_map(route):
@@ -230,8 +230,6 @@ def get_map(route):
             'geometry': geometry, 
             'gradient': gradients,
             'curvature': curvature}
-
-    print(geometry)
 
     return data
         

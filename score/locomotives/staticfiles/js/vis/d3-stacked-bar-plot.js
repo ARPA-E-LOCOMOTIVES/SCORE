@@ -12,7 +12,7 @@
 // can be included to color the bars based on the total value
 class d3StackedBarPlot {
 
-  constructor(data, div_id, color_map=undefined) {
+  constructor(data, div_id, color_map=undefined, user_min=undefined, user_max=undefined) {
 
     // maps the line color to the key
     this.color_map = color_map;
@@ -24,6 +24,8 @@ class d3StackedBarPlot {
     this.maxX = -100000000000;
     this.minY = 0;
     this.maxY = -100000000000;
+    this.user_min = user_min;
+    this.user_max = user_max;
 
     // width and height of the plot
     this.w = 1200;
@@ -74,6 +76,9 @@ class d3StackedBarPlot {
 
     }
 
+    if (this.user_max != undefined)
+      this.maxY = Math.max(this.maxY, this.user_max); 
+
     // data objects, assume one of the keys is 'x' for the the x-axis
     this.data = data;
 
@@ -111,6 +116,11 @@ class d3StackedBarPlot {
         counter += 1;
 
       }
+
+      // user defined limit
+      if (this.user_min != undefined)
+        this.minY = Math.min(this.minY, this.user_min);     
+
     }
 
     this.negative_data = negative_data;
