@@ -57,7 +57,7 @@
 
   var route_id;
   var all_plot_listeners = [];
-  var map_route;
+  var map_route = undefined;
 
   // set default color
   var gradient_map = {};
@@ -69,7 +69,13 @@
   document.getElementById('map').setAttribute("style","width:" + map_width + "px;height:" + control_height + "px;margin:10px");
 
   function getRoute() {
+    all_plot_listeners = []
+    document.getElementById("elevation_details").innerHTML = '';
+    document.getElementById("gradient_details").innerHTML = '';
+    document.getElementById("curvature_details").innerHTML = '';
+
     route_id = $('#route').val();
+    console.log(route_id);
     updateElevation();
     updateMap();
   }
@@ -81,7 +87,6 @@
     })
     .done((elevation_lines) => {
       var elevations = [];
-      // console.log(elevation_lines);
       const ele = elevation_lines.results.elevations;
       const dist = elevation_lines.results.distances;
       ele.forEach((el, index) => {
@@ -140,8 +145,12 @@
         routeDistances.push(0.000621371*d);
       })
 
-      map_route = new MapRoute(routeLines, routeDistances);
-      // add listener for map plot
+      // only initialize the first time
+      if (map_route == undefined)
+        map_route = new MapRoute();
+      // set route lines
+      map_route.set_route(routeLines, routeDistances);
+      // add as a listener
       add_plot_listener(map_route);
 
       var positive_gradients = []
@@ -196,8 +205,6 @@
         $('#loading1').remove();
         // automatically load the data for the current route
         getRoute();
-        updateMap();
-
       })
   });
 </script>
