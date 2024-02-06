@@ -231,11 +231,14 @@ def get_route_map(request, pk):
 
     return JsonResponse({'results': data}, status=200)
 
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @renderer_classes([JSONRenderer])
 def update_route_elevations(request):
-
+    print('updating elevelations')
+    print(request.method)
     data = request.data
     route = data.get('route')
     elevations = [float(i) for i in data.getlist('elevations')]
@@ -245,6 +248,25 @@ def update_route_elevations(request):
 
     # this isn't doing anything at this point other than to query the database
     return JsonResponse({'results': 1}, status=200)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def something_stupid(request):
+    print('updating elevelations')
+    print(request.method)
+    data = request.data
+    route = data.get('route')
+    elevations = [float(i) for i in data.getlist('elevations')]
+    gradients = [float(i) for i in data.getlist('gradients')]
+    
+    result = update_elevations(route, elevations, gradients)
+
+    # this isn't doing anything at this point other than to query the database
+    return JsonResponse({'results': 1}, status=200)
+
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

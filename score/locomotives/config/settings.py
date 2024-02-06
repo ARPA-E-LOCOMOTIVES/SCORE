@@ -140,7 +140,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # default is 1000 - running into issues loading data
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000  # default is 1000 - running into issues loading data
 
 
 # Static files (CSS, JavaScript, Images)
