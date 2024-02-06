@@ -85,7 +85,7 @@ def get_lines(route):
         if lines.count() > 0:
             line = lines[0]
             d = np.array(line.distance)
-            # print(line.fra_id, line.distance)
+            print(line.fra_id, line.distance)
             if line.from_node==nodes[0]:
                 # forward travel - maintain order
                 for j in range(len(d)):

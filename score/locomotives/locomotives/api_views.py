@@ -211,8 +211,6 @@ def get_route_detail(request, pk):
     route = Route2.objects.get(pk=pk)
     lines = get_lines(route)
 
-
-    # this isn't doing anything at this point other than to query the database
     return JsonResponse({'results': lines}, status=200)
 
 @api_view(['GET'])
