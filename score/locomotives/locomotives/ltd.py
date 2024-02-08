@@ -435,8 +435,11 @@ def get_ltd_input(route, consist, policy):
 def get_coefs(consist):
     # Calculate coeffients for the second order equation of train resistance
     # This seems to be the most computationally efficient approach
-    Cd = [4.9, 5.3, 12.0, 4.2, 12.0, 7.1, 5.5, 5.0, 5.0, 5.5, 3.5, 2.0, 24.0, 5.0, 12.3, 7.1]
-    area = [140, 140, 140, 105, 105, 125, 95, 25, 125, 145, 130, 110, 160, 160, 150, 170]
+    # adjusted the area in element 9 (conventional intermodal) from 125 to 190 ft^2
+    # to better represent the frontal area of a double stack well car
+    # we can alos bump up the darg coefficient to about 6
+    Cd = [4.9, 5.3, 12.0, 4.2, 12.0, 7.1, 5.5, 5.0, 9.0, 5.5, 3.5, 2.0, 24.0, 5.0, 12.3, 7.1]
+    area = [140, 140, 140, 105, 105, 125, 95, 25, 190, 145, 130, 110, 160, 160, 150, 170]
     A = 0.0
     B = 0.0
     C = 0.0
