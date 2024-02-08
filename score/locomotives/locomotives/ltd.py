@@ -33,6 +33,7 @@ G = 9.81            # acceleration of gravity
 MU = 0.30           # coefficient of friction
 
 MPH2MPS = 0.44704   # convert MPH to m/s
+M2FT = 3.28084      # convert meters to feet
 
 def get_segments(route):
     segment_list = Segment.objects.filter(route=route).order_by('segment_order')
@@ -435,17 +436,23 @@ def get_ltd_input(route, consist, policy):
 def get_coefs(consist):
     # Calculate coeffients for the second order equation of train resistance
     # This seems to be the most computationally efficient approach
-    Cd = [4.9, 5.3, 12.0, 4.2, 12.0, 7.1, 5.5, 5.0, 5.0, 5.5, 3.5, 2.0, 24.0, 5.0, 12.3, 7.1]
-    area = [140, 140, 140, 105, 105, 125, 95, 25, 125, 145, 130, 110, 160, 160, 150, 170]
+    # added an actual area calcualtion for the intermodal type of car
+    # also increased the drag coefficient to be 6.0 rather than 5.5
+    Cd = [4.9, 5.3, 12.0, 4.2, 12.0, 7.1, 5.5, 5.0, 6.0, 5.5, 3.5, 2.0, 24.0, 5.0, 12.3, 7.1]
+    def_area = [140, 140, 140, 105, 105, 125, 95, 25, 125, 145, 130, 110, 160, 160, 150, 170]
     A = 0.0
     B = 0.0
     C = 0.0
     for car in consist['elements']:
         tons = car['mass'] * 1.10231
         type = car['car_type'] - 1
+        if car['car_type']==9:
+            area = M2FT*car['width']*M2FT*car['weight']
+        else:
+            area = def_area[type]
         A += (1.5 + 18 * car['num_axles']/tons)*tons
         B += 0.03 * tons
-        C += Cd[type]*area[type]/10000
+        C += Cd[type]*area/10000
     return A, B, C
     
 

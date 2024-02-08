@@ -68,6 +68,7 @@ urlpatterns = [
     path('api/yard/<str:yard_id>', api_views.get_yard, name='get_yard'),
     path('api/route/add/', api_views.add_route, name='add_route'),
     path('api/route/detail/<str:pk>', api_views.get_route_detail, name='get_route_detail'),
+    path('api/route/<str:pk>', api_views.get_route, name='get_route'),
     path('api/route/elevations/<str:pk>/', api_views.get_route_elevations, name='get_route_elevations'),
     path('api/route/elevations/update/', api_views.update_route_elevations, name='update_route_elevations'),
     path('api/something/stupid/', api_views.something_stupid, name='something_stupid'),

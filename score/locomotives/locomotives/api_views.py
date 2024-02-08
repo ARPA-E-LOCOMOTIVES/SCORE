@@ -216,6 +216,28 @@ def get_route_detail(request, pk):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @renderer_classes([JSONRenderer])
+def get_route(request, pk):
+
+    try: 
+        route = Route2.objects.get(pk=pk)
+        results = {
+            'owner': route.owner.id,
+            'origin': route.origin.id,
+            'destination': route.destination.id,
+            'path': route.path
+        }
+        status = 200
+    except Route2.DoesNotExist:
+        results = {
+            'message': 'route does not exist'
+        }
+        status = 204
+
+    return JsonResponse({'results': results}, status=status)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
 def get_route_elevations(request, pk):
 
     elevations = get_elevations(pk)
