@@ -70,7 +70,7 @@ def get_segments(route):
 def get_lines(route):
     # this will get the lines for a route
     # it will also add the starting elevation
-    print("the route being assembled: ", str(route))
+    # print("the route being assembled: ", str(route))
     # route = Route2.objects.get(pk=pk)
     # we take the path and get line segments in order
     # to do this we select a line segment that has two consecutive points as to and fr
@@ -79,14 +79,14 @@ def get_lines(route):
     total_length = 0.0
     order = 0
     start_elevation = -1.0
-    print(len(path))
+    # print(len(path))
     for i in range(len(path)-1):
         nodes = [path[i],path[i+1]]
         lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
         if lines.count() > 0:
             line = lines[0]
             d = np.array(line.distance)
-            print(line.fra_id, line.distance)
+            # print(line.fra_id, line.distance)
             if line.from_node==nodes[0]:
                 # forward travel - maintain order
                 for j in range(len(d)):
@@ -110,7 +110,7 @@ def get_lines(route):
                     if i==0 and j==0:
                         start_elevation = line.elevation[-1]
                     total_length=total_length+d[k]
-                    print(i, j, k, len(line.elevation))
+                    # print(i, j, k, len(line.elevation))
                     seg = {'length': d[k],
                            'degrees': line.curvature[k],
                            'gradient': -line.gradient[k],
@@ -428,6 +428,7 @@ def get_ltd_input(route, consist, policy):
         'power_order': policy.power_order,
         'braking': policy.braking,
         'max_speed': policy.max_speed,
+        'charge': policy.charge
     }
 
     return route_data, consist_data, policy_data

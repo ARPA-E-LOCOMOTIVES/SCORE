@@ -328,10 +328,14 @@ class Policy(models.Model):
     power_order = ArrayField(models.CharField(max_length=50, blank=True), size=3, null=True)
     braking = models.CharField(max_length=50, null=True, blank=True)
     max_speed = models.FloatField(default=26.8224)   # in units of m/s - this is 60 MPH
+    charge = models.FloatField(default=1.0) # default to a fully charged battery
     description = models.CharField(max_length=500, null=True, blank=True)
 
     def name(self):
-        s = "automatic with " + self.braking
+        if self.type == 'score_lp':
+            s = "plug-in with " + self.braking
+        elif self.type == 'hybrid_lp':
+            s = "optimal with " + self.braking
         if self.type == 'user_fixed':
             str = ""
             for p in self.power_order:

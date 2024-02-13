@@ -17,7 +17,7 @@ import locomotives.ltd as ltd      # want access to the constants defined here
 def basic(route, consist):
     return 0.0
 
-def optimalLP(results):
+def optimalLP(results, policy):
 
     power_total = np.array(results['power']['total'])           # power in watts
     times = results['times']                                    # time in seconds
@@ -72,10 +72,17 @@ def optimalLP(results):
 
     # setup the LP
     battEnergyMax = 1.0 * results['limits']['max_battery_energy']*1000*60*60 # convert kw-hrs to watt-secs or joules
-    battEnergy0 = 1.0 * battEnergyMax # start at full-charge
+    battEnergy0 = policy['charge'] * battEnergyMax # start at full-charge
     battEnergyMin = 0.0    # 0.1 * battEnergyMax - allow it to use all of the usable energy
     BEUpperBnd = np.full(k, battEnergyMax - battEnergy0)
     BELowerBnd = np.full(k, battEnergyMin  - battEnergy0)
+    # BEUpperBnd = np.full(k, 0)
+    # BELowerBnd = np.full(k, -battEnergyMax)
+    # BEUpperBnd[0] = battEnergyMax - battEnergy0
+    if policy['type']=='hybrid_lp':
+        print('change the last battery constraint')
+        BELowerBnd[-1]=0.0
+    print(BEUpperBnd[-1], BELowerBnd[-1])
     bvec = np.concatenate((BEUpperBnd, -1.0* BELowerBnd, -1.0*int_power))/1000000
     lb = np.concatenate((np.full(k,0.0), np.full(k, -1.0*max_battery_power)))/1000000
     ub = np.concatenate((np.full(k, max(max_diesel_power, max_fuelcell_power)), np.full(k, max_battery_power)))/1000000

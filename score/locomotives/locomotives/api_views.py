@@ -370,8 +370,13 @@ def evaluate(request):
 
     r = Route2.objects.get(id=route_id)
     c = Consist.objects.get(id=consist_id)
+
+    if policy_type=='hybrid_lp':
+        charge = 0.8
+    else:
+        charge = 1.0
     # we can change the max speed later on in the interface
-    p, created = Policy.objects.get_or_create(type=policy_type, power_order=power_order, braking=braking, max_speed=max_speed)
+    p, created = Policy.objects.get_or_create(type=policy_type, power_order=power_order, braking=braking, charge=charge, max_speed=max_speed)
     
     print("about to get an LTDResults object with session: ", session)
 
