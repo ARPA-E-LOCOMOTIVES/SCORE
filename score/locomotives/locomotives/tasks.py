@@ -432,33 +432,42 @@ def eval_ltd(self, results_id):
                 # otherwise we need to check the battery energy constraint
                 # for the optimal lp - ie plug-in hybrid option, we need to confirm that
                 # the battery is never depleted when taking every opportunity to charge it
-                energy_goal = min(stored_energy)-0.08*limits['max_battery_energy']
-                # first time through
+
+                energy_goal = min(stored_energy)-0.08*limits['max_battery_energy'] 
+
+                end_energy_goal = abs(stored_energy[-1]-max_final_battery)
+                # check to see if we every drop below minimum stored energy
+                min_test = energy_goal >0
+                # check to see if the stored energy at end is near desired - currently +/- 5%
+                end_test = end_energy_goal < 0.05*limits['max_battery_energy']
+
                 if low_speed <1.0:
                     # couple of tests to see if we can succeed even at max speed
-                    if policy['type']=='score_lp' and energy_goal >=0:
+                    if policy['type']=='score_lp' and min_test:
                         # first time through low_speed should be "zero"
                         # if we have energy in the battery throughout we are good to go
                         iter = False
-                    elif policy['type']=='hybrid_lp' and min(stored_energy)>0 and stored_energy[-1]>max_final_battery:
+                    elif policy['type']=='hybrid_lp' and ((min_test and energy_goal<.02*limits['max_battery_energy'] and stored_energy[-1]>max_final_battery) or (min(stored_energy)>0 and end_test)):
+                        # this one is much more complicated - two combined conditions need to be tested
                         iter = False
 
                     else:
                         # first time through - we need to go slower
                         # need to select a speed to bound the response
+                        # print('first time through, adding 10mph to low speed')
                         high_speed = route_max_speed
                         route_max_speed = 10 * ltd.MPH2MPS # set low to 10 mph
                         low_speed = route_max_speed  # should keep us from coming back here
                         iter = True
                 else: 
                     # not the first time through - so determine which bounds to move
-                    if policy['type']=='score_lp' and energy_goal > 0:
+                    if policy['type']=='score_lp' and min_test:
                         # we have energy at new speed - move lower bound
-                        print('changing low speed')
+                        # print(('changing low speed - score', energy_goal))
                         low_speed = route_max_speed
-                    elif policy['type']=='hybrid_lp' and min(stored_energy)>0 and stored_energy[-1]>max_final_battery:
+                    elif policy['type']=='hybrid_lp' and ((min_test and stored_energy[-1]>max_final_battery) or (min(stored_energy)>0 and end_test)):
                         low_speed = route_max_speed
-                        print('changing low speed')
+                        # print('changing low speed - hybrid')
                     else:
                         # need a check to see if the route_max_speed is already at low
                         # speed and we still can't meet criterion for iteration
@@ -467,25 +476,30 @@ def eval_ltd(self, results_id):
                             iter = False
                         else:
                             # we need to move upper bound
-                            print('changing high speed')
+                            # print('changing high speed')
                             high_speed = route_max_speed
 
                     # need to determine the next speed setting to test
                     # this should make sure it is positive to not have lp fail afterwards
                     if policy['type']=='score_lp' and energy_goal<50 and energy_goal>0:
                         # we are done
+                        # this drives the energy_goal down to zero whish should also be maximing speed
                         iter = False
-                    elif policy['type']=='hybrid_lp' and  min(stored_energy)>0 and stored_energy[-1]>max_final_battery:
+                    elif policy['type']=='hybrid_lp' and  ((min_test and energy_goal<.02*limits['max_battery_energy'] and stored_energy[-1]>max_final_battery) or (min(stored_energy)>0 and end_test)):
                         # we are also done
+                        # this seems to be a little too simple - want to find the maximum speed that satifies these coditions
+                        # there are two separate constraints to deal with here. The first is if we are
+                        # print((min_test, min(stored_energy), end_test, stored_energy[-1], route_max_speed))
                         iter = False
                     else:
                         # the relationship between speed and min stored energy is not very linear - this may not perform very well
                         # may want to consider simpler bisection method - this current method is the Secant method and may nto converge
                         # in some instances
                         # Bisection method
+                        # print('changing route_max_speed')
                         route_max_speed = (low_speed+high_speed)/2.0
                         iter = True
-            # print((iter, policy['type'], low_speed, high_speed, route_max_speed, min(stored_energy), stored_energy[-1], energy_goal))  
+            # print((iter, policy['type'], low_speed, high_speed, route_max_speed, energy_goal, stored_energy[-1], min(stored_energy)))  
 
 
     # take off the first and last 5 elements of the speed array
