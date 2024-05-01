@@ -184,6 +184,8 @@ def get_map(route):
     gradients = []
     curvature = []
 
+    print('route id: ', route.id, ' num nodes: ', len(path))
+
     for i in range(len(path)-1):
         nodes = path[i], path[i+1]
         lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
