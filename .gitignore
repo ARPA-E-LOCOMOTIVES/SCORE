@@ -16,3 +16,5 @@ temp/
 
 # generated static files
 score/locomotives/staticfiles/
+
+.condarc

@@ -1,8 +1,12 @@
-FROM jupyter/scipy-notebook
+FROM quay.io/jupyter/scipy-notebook
 
 USER root
 
 RUN chown -R ${NB_UID} ${HOME}
+
+## ARL steps for conda install
+
+# COPY ./.condarc /opt/conda
 
 ## Switch to the lowly user, no more root.
 USER ${NB_USER}
