@@ -18,3 +18,6 @@ temp/
 score/locomotives/staticfiles/
 
 .condarc
+
+*checkpoint.ipynb
+
