@@ -1,10 +1,8 @@
 class MapRoute {
 
-  constructor(routeLines, routeDistances=undefined) {
+  constructor() {
 
-    this.routeLines = routeLines;
-    this.routeDistances = routeDistances;
-
+    // show railways
     var open_railway_map_layer = new L.TileLayer('http://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
     {
       attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a> and OpenStreetMap',
@@ -14,20 +12,11 @@ class MapRoute {
       opacity: 0.4
     });
 
-    // var google_map_layer = new L.tileLayer.grayscale('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
-    //     maxZoom: 19,
-    //     subdomains:['mt0','mt1','mt2','mt3']
-    // });
-
+    // show Google map view
     var google_map_layer = new L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
         maxZoom: 19,
         subdomains:['mt0','mt1','mt2','mt3']
     });
-
-    //var open_street_map_layer = new L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    //	maxZoom: 19,
-    //	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    //})
 
     this.map = new L.Map("map", {
       center: new L.LatLng(40.0, -88.86),
@@ -35,13 +24,26 @@ class MapRoute {
       layers: [google_map_layer, open_railway_map_layer]
     });
 
-    //var linestyle = {
-    //    "color": "#0044ff",
-    //};
+  }
 
+  set_route(routeLines, routeDistances=undefined){
+
+    // remove route lines
+    if (this.route_layer != undefined)
+      this.map.removeLayer(this.route_layer);
+
+    // remove the distance point
+    if (this.point_layer != undefined)
+      this.map.removeLayer(this.point_layer);      
+
+    // initialize data
+    this.routeLines = routeLines;
+    this.routeDistances = routeDistances;
+    
+    // set lines with no distance point
     this.route_layer = L.geoJSON(routeLines).addTo(this.map);
     this.point_layer = undefined;
-
+  
   }
 
   add_listener(obj){}
@@ -75,6 +77,7 @@ class MapRoute {
         "opacity": 1.0
     };
     this.point_layer = L.geoJSON(point_line, {style: myStyle}).addTo(this.map);
+  
   }
 
 

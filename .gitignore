@@ -10,3 +10,14 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# temp files
+temp/
+
+# generated static files
+score/locomotives/staticfiles/
+
+.condarc
+
+*checkpoint.ipynb
+

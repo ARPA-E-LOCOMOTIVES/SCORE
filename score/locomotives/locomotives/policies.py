@@ -17,7 +17,7 @@ import locomotives.ltd as ltd      # want access to the constants defined here
 def basic(route, consist):
     return 0.0
 
-def optimalLP(results):
+def optimalLP(results, policy):
 
     power_total = np.array(results['power']['total'])           # power in watts
     times = results['times']                                    # time in seconds
@@ -72,16 +72,36 @@ def optimalLP(results):
 
     # setup the LP
     battEnergyMax = 1.0 * results['limits']['max_battery_energy']*1000*60*60 # convert kw-hrs to watt-secs or joules
-    battEnergy0 = 1.0 * battEnergyMax # start at full-charge
+    battEnergy0 = policy['charge'] * battEnergyMax # start at full-charge
     battEnergyMin = 0.0    # 0.1 * battEnergyMax - allow it to use all of the usable energy
+    # this formulation looks at the change in battery energy from the initial condition
+    # as a result, if we are starting at less than full charge we can go over the initial zero energy net for the battery
     BEUpperBnd = np.full(k, battEnergyMax - battEnergy0)
+    # but at all times we can not drop below the the negative of the initial charge
     BELowerBnd = np.full(k, battEnergyMin  - battEnergy0)
+    # BEUpperBnd = np.full(k, 0)
+    # BELowerBnd = np.full(k, -battEnergyMax)
+    # BEUpperBnd[0] = battEnergyMax - battEnergy0
+    if policy['type']=='hybrid_lp':
+        print('change the last battery constraint')
+        # soften this a little?
+        # BELowerBnd[-1]=0.0
+        BELowerBnd[-1]=0.05*(battEnergyMin  - battEnergy0)
+    # the inequality constraints are less-than-equals (<=)
+    # the first constraints are the battery energy constraints
+    # the second part of the constraints in bvec is the total provided power must
+    # be greater than or equal to sum of all powers (so need to mulitply both side by -1 to make a less than constraint)
     bvec = np.concatenate((BEUpperBnd, -1.0* BELowerBnd, -1.0*int_power))/1000000
+    # next we need to constrain the maximum and minimum power from each power source
+    # this is assuming we can regenerate at maximum power (for now)
     lb = np.concatenate((np.full(k,0.0), np.full(k, -1.0*max_battery_power)))/1000000
     ub = np.concatenate((np.full(k, max(max_diesel_power, max_fuelcell_power)), np.full(k, max_battery_power)))/1000000
-
+    # don't really care about actual costs, jsut relative ones so here we are assuming diesel is 4x electricity
     cvec = np.concatenate((4.0*int_time, 1.0*int_time), axis=None)
     ident = -1.0*np.identity(k)
+    # the first part of the M matrix is interval time length (to give energy from power states)
+    # the second part is plain power for power constraints
+    # battery power drains energy so need the -tlt to integrate the energy remaining in the battery
     Mmat = np.array(np.bmat([[np.zeros_like(tlt), -tlt],[np.zeros_like(tlt), tlt],[ident, ident]]))
 
     G = np.bmat([Mmat.T, np.eye(2*k), -np.eye(2*k)]).T

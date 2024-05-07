@@ -170,15 +170,17 @@
 
   function updateElevation() {
     $.ajax({
-      url: `/api/get_elevation/${ results.route.id }/`,
-      type: 'GET'
-    })
-    .done((elevation_lines) => {
-      var elevations = []
-      const elevation_data = elevation_lines.data;
-      for(var row in elevation_data){
-        elevations.push({x: 0.000621371*elevation_data[row][0], y: 3.28084*elevation_data[row][1]});
-      }
+        url: `/api/route/elevations/${ results.route.id }/`,
+        type: 'GET'
+      })
+      .done((elevation_lines) => {
+        var elevations = [];
+        // console.log(elevation_lines);
+        const ele = elevation_lines.results.elevations;
+        const dist = elevation_lines.results.distances;
+        ele.forEach((el, index) => {
+          elevations.push({x: 0.000621371*dist[index], y: 3.28084*el })
+        });
       var elevations_plot = new d3LinePlot(elevations, 'elevation_details');
       elevations_plot.set_size(plot_width,180);
       elevations_plot.set_titles("distance (mi)", "feet");

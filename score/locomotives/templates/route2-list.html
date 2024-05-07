@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block main_section %}
+
+{% csrf_token %}
+<div class="row-fluid">
+  <div class="span8">
+    <br />
+    <div style="margin-left:20px">
+      <h4>Select Route : </h4><br>
+      <select name='routes' id="route" onchange="getRoute()">
+        <option value="-" id="loading1">Loading</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<br />
+
+<div class="row-fluid">
+  <div class="span6">
+    <div style="margin:10px">
+      <div id="map" style="height:600px;width:600px"></div>
+    </div>
+  </div>
+
+  <div class="span6">
+    <div style="margin:10px">
+      <h4>Elevation</h4>
+      <div id="elevation_details"></div>
+      <h4>Gradient Percentage</h4>
+      <div id="gradient_details"></div>
+      <h4>Curvature</h4>
+      <div id="curvature_details"></div>
+      <b>Zoom</b> : left mouse drag<br>
+      <b>Reset Zoom</b> : double left mouse click<br><br>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/d3.d4.min.js' %}"></script>
+<script src="{% static 'js/vis/d3-line-plot.js' %}"></script>
+<script src="{% static 'js/map/map_route.js' %}"></script>
+<script src="{% static 'js/vis/d3-stacked-bar-plot.js' %}"></script>
+
+<script type="text/javascript">
+
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+
+  var line_plot_width = 0.44*width;
+  var map_width = line_plot_width;
+  var control_height = 0.7*map_width;
+  var plot_height = control_height/3.6;
+
+  var route_id;
+  var all_plot_listeners = [];
+  var map_route = undefined;
+
+  // set default color
+  var gradient_map = {};
+  gradient_map['y'] = "#0000ffaa";
+
+  document.getElementById('elevation_details').setAttribute("style","width:" + line_plot_width + "px;height:" + plot_height + "px;margin:10px");
+  document.getElementById('gradient_details').setAttribute("style","width:" + line_plot_width + "px;height:" + plot_height + "px;margin:10px");
+  document.getElementById('curvature_details').setAttribute("style","width:" + line_plot_width + "px;height:" + plot_height + "px;margin:10px");
+  document.getElementById('map').setAttribute("style","width:" + map_width + "px;height:" + control_height + "px;margin:10px");
+
+  function getRoute() {
+    all_plot_listeners = []
+    document.getElementById("elevation_details").innerHTML = '';
+    document.getElementById("gradient_details").innerHTML = '';
+    document.getElementById("curvature_details").innerHTML = '';
+
+    route_id = $('#route').val();
+    console.log(route_id);
+    updateElevation();
+    updateMap();
+  }
+
+  function updateElevation() {
+    $.ajax({
+      url: `/api/route/elevations/${ route_id }/`,
+      type: 'GET'
+    })
+    .done((elevation_lines) => {
+      var elevations = [];
+      const ele = elevation_lines.results.elevations;
+      const dist = elevation_lines.results.distances;
+      ele.forEach((el, index) => {
+        elevations.push({x: 0.000621371*dist[index], y: 3.28084*el })
+      });
+
+      //var elevations_plot = new d3LinePlot(elevations, 'elevation_details');
+      //elevations_plot.set_size(line_plot_width,plot_height);
+      //elevations_plot.set_titles("distance (mi)", "feet");
+      //elevations_plot.include_legend_area();
+      //elevations_plot.draw();  
+      
+      var elevations_plot = new d3StackedBarPlot(elevations, 'elevation_details', gradient_map);
+      elevations_plot.set_size(line_plot_width,plot_height);
+      elevations_plot.set_titles("distance (mi)", "feet");
+      elevations_plot.draw();
+
+      // add listener for elevation plot
+      add_plot_listener(elevations_plot);
+
+    });
+
+  }
+
+  function add_plot_listener(plot) {
+    if (all_plot_listeners.length > 0 ) {
+      for (i in all_plot_listeners) {
+        var p = all_plot_listeners[i];
+        p.add_listener(plot);
+        plot.add_listener(p);
+      }
+      all_plot_listeners.push(plot);
+    } else {
+      all_plot_listeners.push(plot);
+    }
+  }
+
+  function updateMap() {
+    $.ajax({
+      url: `/api/route/map/${ route_id }/`,
+      type: 'GET'
+    })
+    .done((map_data) => {
+      routeLines = [];
+      routeDistances = [];
+
+      geom = map_data.results.geometry;
+      dist = map_data.results.distance;
+      grad = map_data.results.gradient;
+      curv = map_data.results.curvature;
+
+      dist.forEach((d, index) => {
+        routeLines.push({"type":  "LineString", 
+                          "coordinates": [geom[index], geom[index+1]]
+        });
+        routeDistances.push(0.000621371*d);
+      })
+
+      // only initialize the first time
+      if (map_route == undefined)
+        map_route = new MapRoute();
+      // set route lines
+      map_route.set_route(routeLines, routeDistances);
+      // add as a listener
+      add_plot_listener(map_route);
+
+      var positive_gradients = []
+      var negative_gradients = []
+      grad.forEach((gr, index) => {
+        if(gr >= 0){
+          positive_gradients.push({x: 0.000621371*dist[index], y: 100*gr });
+          negative_gradients.push({x: 0.000621371*dist[index], y: 0});
+        }
+        if(gr <= 0){ 
+          negative_gradients.push({x: 0.000621371*dist[index], y: 100*gr });
+          positive_gradients.push({x: 0.000621371*dist[index], y: 0});
+        }
+      });
+
+      var gradient_plot = new d3StackedBarPlot(positive_gradients, 'gradient_details', gradient_map, -3, 3);
+      gradient_plot.set_size(line_plot_width,plot_height);
+      gradient_plot.assign_negative_bars(negative_gradients);
+      gradient_plot.set_titles("distance (mi)", "gradient %");
+      gradient_plot.draw();
+
+      add_plot_listener(gradient_plot);
+
+      var curve = []
+      curv.forEach((cv, index) => {
+        curve.push({x: 0.000621371*dist[index], y: cv });
+      });
+
+      var curve_plot = new d3StackedBarPlot(curve, 'curvature_details', gradient_map, 0, 20);
+      curve_plot.set_size(line_plot_width,plot_height);
+      curve_plot.set_titles("distance (mi)", "degrees");
+      curve_plot.draw();
+
+      add_plot_listener(curve_plot);        
+
+    });
+
+  }
+
+  //use this function to load data once the page loads
+  $(function () {
+      // load routes into option box
+      $.ajax({
+        url: '/api/get_route_list/',
+        type: 'GET'
+      })
+      .done((routes) => {
+        $.each(routes, function(id, route_name){
+          var option = new Option(route_name, id);
+          $("#route").append(option);
+        });
+        $('#loading1').remove();
+        // automatically load the data for the current route
+        getRoute();
+      })
+  });
+</script>
+
+{% endblock %}

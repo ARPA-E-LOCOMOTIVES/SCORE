@@ -12,6 +12,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.urls import reverse
 from django.db.models.signals import post_init
 from django.contrib.auth.models import User, Group
+from django.core.serializers.json import DjangoJSONEncoder
 from pytz import timezone
 import datetime
 
@@ -69,6 +70,54 @@ class SpeedRestriction(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     max_speed = models.FloatField(null=True, blank=True)
     stop_duration = models.FloatField(null=True, blank=True)
+
+class Railroad(models.Model):
+    code = models.CharField(max_length=4)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.code
+
+class Line(models.Model):
+    fra_id = models.IntegerField()    
+    from_node = models.IntegerField()
+    to_node = models.IntegerField()
+    length = models.FloatField(default=0.0)
+    net = models.CharField(max_length=1, null=True, blank=True)
+    rights = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    max_speed = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    xy = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    elevation = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    lnglat = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    curvature = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    gradient = models.JSONField(encoder=DjangoJSONEncoder,  null=True, blank=True)
+    distance = models.JSONField(encoder=DjangoJSONEncoder,  null=True, blank=True)
+
+    def __str__(self):
+        return str(self.fra_id)
+
+class Yard(models.Model):
+    code = models.CharField(max_length=4)
+    name = models.CharField(max_length=100)
+    city = models.CharField(max_length=50)
+    state = models.CharField(max_length=2)
+    location = models.IntegerField(null=True, blank=True)
+    owner = models.ForeignKey(Railroad, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+    
+class Route2(models.Model):
+    origin = models.ForeignKey(Yard, on_delete=models.CASCADE, related_name='origin')
+    destination = models.ForeignKey(Yard, on_delete=models.CASCADE, related_name='destinaton')
+    owner = models.ForeignKey(Railroad, on_delete=models.CASCADE, null=True, blank=True)
+    path = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+
+    def __str__(self):
+        return self.origin.name + ' - ' + self.destination.name
+    
+    def get_absolute_url(self):
+        return reverse('route-detail', kwargs={'pk': self.pk})
 
 class CarType(models.Model):
     code = models.CharField(max_length=1)
@@ -279,10 +328,14 @@ class Policy(models.Model):
     power_order = ArrayField(models.CharField(max_length=50, blank=True), size=3, null=True)
     braking = models.CharField(max_length=50, null=True, blank=True)
     max_speed = models.FloatField(default=26.8224)   # in units of m/s - this is 60 MPH
+    charge = models.FloatField(default=1.0) # default to a fully charged battery
     description = models.CharField(max_length=500, null=True, blank=True)
 
     def name(self):
-        s = "automatic with " + self.braking
+        if self.type == 'score_lp':
+            s = "plug-in with " + self.braking
+        elif self.type == 'hybrid_lp':
+            s = "optimal with " + self.braking
         if self.type == 'user_fixed':
             str = ""
             for p in self.power_order:
@@ -325,7 +378,7 @@ class Session(models.Model):
     user = models.ForeignKey(User, default=None, null=True, on_delete=models.CASCADE) 
 
 class LTDResults(models.Model):
-    route = models.ForeignKey(Route, on_delete=models.CASCADE)
+    route = models.ForeignKey(Route2, on_delete=models.CASCADE)
     consist = models.ForeignKey(Consist, on_delete=models.CASCADE)
     policy = models.ForeignKey(Policy, default=None, on_delete=models.CASCADE)
     analysis_date = models.DateField(null=True, blank=True)

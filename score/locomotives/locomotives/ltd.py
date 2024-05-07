@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d
 from scipy.optimize import brentq
 import time
 
-from .models import Segment, ConsistCar, PowerToWheels, Route
+from .models import Segment, ConsistCar, PowerToWheels, Route, Route2, Line
 
 
 # the following constants are for fuel and ghg emissions
@@ -33,6 +33,7 @@ G = 9.81            # acceleration of gravity
 MU = 0.30           # coefficient of friction
 
 MPH2MPS = 0.44704   # convert MPH to m/s
+M2FT = 3.28084      # convert meters to feet
 
 def get_segments(route):
     segment_list = Segment.objects.filter(route=route).order_by('segment_order')
@@ -58,16 +59,222 @@ def get_segments(route):
         }
         segment_data.append(seg)
 
-        route_data = {
+    route_data = {
         'segments': segment_data,
         'total_length': total_length
     }
 
     return route_data
 
+
+def get_lines(route):
+    # this will get the lines for a route
+    # it will also add the starting elevation
+    # print("the route being assembled: ", str(route))
+    # route = Route2.objects.get(pk=pk)
+    # we take the path and get line segments in order
+    # to do this we select a line segment that has two consecutive points as to and fr
+    path = route.path
+    segment_data = []
+    total_length = 0.0
+    order = 0
+    start_elevation = -1.0
+    # print(len(path))
+    for i in range(len(path)-1):
+        nodes = [path[i],path[i+1]]
+        lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
+        if lines.count() > 0:
+            line = lines[0]
+            d = np.array(line.distance)
+            # print(line.fra_id, line.distance)
+            if line.from_node==nodes[0]:
+                # forward travel - maintain order
+                for j in range(len(d)):
+                    if i==0 and j==0:
+                        start_elevation = line.elevation[0]
+                    total_length=total_length+d[j]
+                    seg = {'length': d[j],
+                           'degrees' : line.curvature[j],
+                           'gradient': line.gradient[j],
+                           'distance': total_length,
+                           'max_speed': line.max_speed[j],
+                           'elevation': line.elevation[j+1],
+                           'order': order
+                    }
+                    order=order+1
+                    segment_data.append(seg)
+            else:
+                # reverse travel
+                for j in range(len(d)):
+                    k = len(d)-(j+1)
+                    if i==0 and j==0:
+                        start_elevation = line.elevation[-1]
+                    total_length=total_length+d[k]
+                    # print(i, j, k, len(line.elevation))
+                    seg = {'length': d[k],
+                           'degrees': line.curvature[k],
+                           'gradient': -line.gradient[k],
+                           'distance': total_length,
+                           'max_speed': line.max_speed[k],
+                           'elevation': line.elevation[k+1],
+                           'order': order
+                    }
+                    order=order+1
+                    segment_data.append(seg)
+
+    route_data = {
+        'segments': segment_data,
+        'start_elevation': start_elevation,
+        'total_length': total_length
+    }
+
+    return route_data
+
+def get_elevations(route):
+    route = Route2.objects.get(pk=route)
+    # we take the path and get line segments in order
+    # to do this we select a line segment that has two consecutive points as to and fr
+    path = route.path
+    elevations = [] 
+    distances = [0.0]   
+    print('hello from ltd.get_elevations')
+
+    for i in range(len(path)-1):
+        nodes = [path[i],path[i+1]]
+        lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
+        if lines.count() > 0:
+            # take first (shortest) line that includes both nodes - it is possible for there to be
+            # more than one line between two nodes
+            line = lines[0]
+            # grab an array of the distances between the locations in the line
+            d = np.array(line.distance)
+
+            # print(line.fra_id, line.distance)
+            if line.from_node==nodes[0]:
+                # forward travel - maintain order
+                # there are one more elevation than distance in the lists since the ends most overlap
+                for j in range(len(d)):
+                    elevations.append(line.elevation[j])
+                    # add the distances up
+                    distances.append(distances[-1]+d[j])
+                # When we are at the last path, finally add the end location
+                if i == (len(path)-2):
+                    elevations.append(line.elevation[j+1])
+
+            else:
+                # reverse travel
+                for j in range(len(d)):
+                    k = len(d)-(j+1)
+                    elevations.append(line.elevation[k])
+                    distances.append(distances[-1]+d[k])
+                if i == (len(path)-2):
+                    elevations.append(line.elevation[k+1])
+
+    elevation_data = {'elevations': elevations,
+                      'distances': distances}
+
+    return elevation_data
+
+def get_map(route):
+    route = Route2.objects.get(pk=route)
+
+    path = route.path
+    distances = [0.0]
+    geometry = []
+    gradients = []
+    curvature = []
+
+    print('route id: ', route.id, ' num nodes: ', len(path))
+
+    for i in range(len(path)-1):
+        nodes = path[i], path[i+1]
+        lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
+        if lines.count() > 0:
+            line = lines[0]
+            d = np.array(line.distance)
+            lnglat = np.array(line.lnglat)
+            num_pts = int(len(lnglat)/2)
+            ll = lnglat.reshape((num_pts,2))
+            # print(line.fra_id, line.distance)
+            if line.from_node==nodes[0]:
+                # forward travel - maintain order
+                # there are one more elevation than distance in the lists since the ends most overlap
+                for j in range(len(d)):
+                    geometry.append(list(ll[j]))
+                    # add the distances up
+                    distances.append(distances[-1]+d[j])
+                    gradients.append(line.gradient[j])
+                    curvature.append(line.curvature[j])
+                # When we are at the last path, finally add the end location
+                if i == (len(path)-2):
+                    geometry.append(list(ll[j+1]))
+                    gradients.append(line.gradient[j])
+                    curvature.append(line.curvature[j])
+
+            else:
+                # reverse travel
+                for j in range(len(d)):
+                    k = len(d)-(j+1)
+                    geometry.append(list(ll[k]))
+                    distances.append(distances[-1]+d[k])
+                    gradients.append(-line.gradient[k])
+                    curvature.append(line.curvature[k])
+                if i == (len(path)-2):
+                    geometry.append(list(ll[k+1]))
+                    gradients.append(-line.gradient[k + 1])
+                    curvature.append(line.curvature[k + 1]) 
+
+    # remove the first distance
+    distances.pop(0)
+    gradients.pop(0)
+    curvature.pop(0)
+
+    data = {'distance': distances,
+            'geometry': geometry, 
+            'gradient': gradients,
+            'curvature': curvature}
+
+    return data
+        
+
+
+def update_elevations(route, elevations, gradients):
+    r = Route2.objects.get(pk=route)
+    # this routine needs to go through each Line segment and update the elevations in it
+    # This is a tedious process that requires very careful book-keeping on the list of values
+    path = r.path
+    start = 0
+    for i in range(len(path)-1):
+        nodes = [path[i],path[i+1]]
+        lines = Line.objects.filter(from_node__in=nodes, to_node__in=nodes).order_by('length')
+        if lines.count() > 0:
+            line = lines[0]
+            ld = len(line.distance)
+            # print(start, ld, len(elevations), len(gradients))
+            # print(line.fra_id, line.distance)
+            if line.from_node==nodes[0]:
+                # forward travel - maintain order
+                eles = elevations[start:start+ld+1]
+                grads = gradients[start:start+ld]
+            else:
+                # reverse travel
+                eles = elevations[start:start+ld+1][::-1]
+                grads = list(-np.array(gradients[start:start+ld][::-1]))
+            start = start + ld
+            line.elevation=eles
+            line.gradient=grads
+            # print(i, ld, len(grads), len(eles))
+            # lets not save it to start - don't want to mess things up
+            line.save()
+            # print(line)
+
+    return 1
+
+
 def get_ltd_input(route, consist, policy):
 
-    route_data = get_segments(route)
+    # route_data = get_segments(route)
+    route_data = get_lines(route)
 
     consist_list = ConsistCar.objects.filter(consist=consist).order_by('position')
 
@@ -223,6 +430,7 @@ def get_ltd_input(route, consist, policy):
         'power_order': policy.power_order,
         'braking': policy.braking,
         'max_speed': policy.max_speed,
+        'charge': policy.charge
     }
 
     return route_data, consist_data, policy_data
@@ -231,17 +439,23 @@ def get_ltd_input(route, consist, policy):
 def get_coefs(consist):
     # Calculate coeffients for the second order equation of train resistance
     # This seems to be the most computationally efficient approach
-    Cd = [4.9, 5.3, 12.0, 4.2, 12.0, 7.1, 5.5, 5.0, 5.0, 5.5, 3.5, 2.0, 24.0, 5.0, 12.3, 7.1]
-    area = [140, 140, 140, 105, 105, 125, 95, 25, 125, 145, 130, 110, 160, 160, 150, 170]
+    # added an actual area calcualtion for the intermodal type of car
+    # also increased the drag coefficient to be 6.0 rather than 5.5
+    Cd = [4.9, 5.3, 12.0, 4.2, 12.0, 7.1, 5.5, 5.0, 6.0, 5.5, 3.5, 2.0, 24.0, 5.0, 12.3, 7.1]
+    def_area = [140, 140, 140, 105, 105, 125, 95, 25, 125, 145, 130, 110, 160, 160, 150, 170]
     A = 0.0
     B = 0.0
     C = 0.0
     for car in consist['elements']:
         tons = car['mass'] * 1.10231
         type = car['car_type'] - 1
+        if car['car_type']==9:
+            area = M2FT*car['width']*M2FT*car['weight']
+        else:
+            area = def_area[type]
         A += (1.5 + 18 * car['num_axles']/tons)*tons
         B += 0.03 * tons
-        C += Cd[type]*area[type]/10000
+        C += Cd[type]*area/10000
     return A, B, C
     
 
@@ -389,27 +603,27 @@ def create_intervals(consist, route, deltaX=100):
 
     return intervals
 
-def get_elevations(route_id):
-    route = Route.objects.get(id=route_id)
+# def get_elevations(route_id):
+#     route = Route.objects.get(id=route_id)
     # route_data = get_segments(route)
     # segments = route_data['segments']
-    segments = Segment.objects.filter(route=route).order_by('segment_order').all()
-    route_dist_seg = 0
-    elevation_data = []
-    elevation_gain = 0.0
-    elevation_loss = 0.0
-    for i, seg in enumerate(segments):
-        route_dist_seg += seg.arc_distance
-        elevation_data.append([route_dist_seg, seg.locations.all()[1].smooth_elev_m])
-    last_elevation = elevation_data[0][1]
-    for x,z in elevation_data:
-        elevation_change = z - last_elevation
-        if elevation_change < 0:
-            elevation_loss += abs(elevation_change)
-        else:
-            elevation_gain += elevation_change
-        last_elevation = z
-    return elevation_data, elevation_gain, elevation_loss
+#     segments = Segment.objects.filter(route=route).order_by('segment_order').all()
+#     route_dist_seg = 0
+#     elevation_data = []
+#     elevation_gain = 0.0
+#     elevation_loss = 0.0
+#     for i, seg in enumerate(segments):
+#         route_dist_seg += seg.arc_distance
+#         elevation_data.append([route_dist_seg, seg.locations.all()[1].smooth_elev_m])
+#     last_elevation = elevation_data[0][1]
+#     for x,z in elevation_data:
+#         elevation_change = z - last_elevation
+#         if elevation_change < 0:
+#             elevation_loss += abs(elevation_change)
+#         else:
+#             elevation_gain += elevation_change
+#         last_elevation = z
+#    return elevation_data, elevation_gain, elevation_loss
 
 
 
