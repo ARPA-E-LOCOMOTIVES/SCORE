@@ -528,7 +528,7 @@ def eval_ltd(self, results_id):
             results.save()
             if num_iters<10:
                 try:
-                    results.result = policies.optimalLP(results.result)
+                    results.result = policies.optimalLP(results.result, policy)
                     results.result_code = 0
                 except OptimalLPException:
                     results.result_code = 2
